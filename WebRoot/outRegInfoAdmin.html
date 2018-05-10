@@ -1,0 +1,162 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>外出登记</title>
+    <link rel="stylesheet" href="./static/app.css?t=20185">
+    <script>      
+        var dpr = window.devicePixelRatio;
+        var fontSize = 0;
+        document.documentElement.setAttribute('data-dpr', dpr)
+        fontSize = document.documentElement.clientWidth / 3.75
+        document.documentElement.style.fontSize = fontSize + 'px'
+    </script>
+
+    <body>
+        <div id="app" v-cloak>
+            <div class="adminInfo">
+                <h2 class="adminInfo-tit">{{recordInfo.username}}的外出登记详情</h2>
+                <ul class="adminInfo-det">
+                    <li>
+                        <div class="name">所属部门</div>
+                        <span>{{recordInfo.deptname}}</span>
+                    </li>
+                    <li>
+                        <div class="name">联系电话</div>
+                        <span>{{recordInfo.phone}}</span>
+                    </li>
+                    <li>
+                        <div class="name">开始时间</div>
+                        <span>{{recordInfo.outtime}}</span>
+                    </li>
+                    <li>
+                        <div class="name">结束时间</div>
+                        <span>{{recordInfo.backtime}}</span>
+                    </li>
+                    <li>
+                        <div class="name">请假事由</div>
+                        <div class="fr">{{recordInfo.outreason}}</div>
+                    </li>
+                </ul>
+                <div class="adminInfo-person">
+                    <img :src="recordInfo.photoUrl" alt="">
+                    <div class="adminInfo-personR">
+                        <div class="name">{{recordInfo.username}}</div>
+                        <p>{{recordInfo.deptname}}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="adminInfo-re">
+                <h2>
+                    办事地签到记录
+                </h2>
+                <ul class="oR-locationList">
+                    <li v-for="item in locateRecord">
+                        <div class="oR-locationTime">{{item.clockintime}}</div>
+                        <p class="oR-location">{{item.position}}</p>
+                    </li>
+                </ul>
+            </div>
+            <ul class="admin-ctr">
+                <li @click="sendMessage">发消息</li>
+                <li @click="call">云之家电话</li>
+            </ul>
+        </div>
+        <script src="./static/vue.min.js"></script>
+        <script src="./static/axios.min.js"></script>
+        <script src="./static/qingjs.min.js"></script>
+        <script src="./static/util.js?t=20185"></script>
+        <script type="text/javascript">
+            var app = new Vue({
+                el: '#app',
+                data: {
+                    recordInfo: {
+                        username: '',
+                        deptname: '',
+                        phone: '',
+                        outtime: '',
+                        backtime: '',
+                        outreason: '',
+                        photoUrl: '',
+                        openid: ''
+                    },
+                    locateRecord: [],
+                    recordid: util.getQuery().id
+                },
+                created: function () {
+                    this.getData()
+                },
+                methods: {
+                    getData: function () { //外出登记详情
+                        var _self = this;
+                        var params = new URLSearchParams();//注意兼容性
+                        params.append('reqName', 'selectOneRecord');
+                        params.append('recordid', _self.recordid);                        
+                        this.$axios.post('', params//请求外出登记列表数据
+                        ).then(function (res) {
+                            if (res.data.success) {
+                              try{
+                                var data = res.data.data;
+                                data.outtime = util.dateFormat(data.outtime);
+                                data.backtime = util.dateFormat(data.backtime);
+                                _self.recordInfo = data;
+                                _self.locateRecord = res.data.data.clonkIns
+                                _self.timeFormat();
+                              }catch(err){
+                                _self.$toast(err)
+                              }
+                            } else {
+                                _self.$toast(res.data.error)
+                            }
+                        })
+                    },
+                    timeFormat: function () {
+                        var _self = this;
+                        var today = new Date().getDate();
+                        this.locateRecord.forEach(function (item, index) {
+                            var outtime = util.stringToTimestamp(item.clockintime);                          
+                            var Month = outtime.getMonth() + 1;//月
+                            var oDate = outtime.getDate();//日
+                            var Hours = outtime.getHours();//时
+                            var Minutes = outtime.getMinutes();//分
+
+                            var day = Month + '月' + oDate + '日';//日期                                     
+                            var time = util.repairZero(Hours) + ':' + util.repairZero(Minutes);//时间                                      
+                            var diff = today - oDate;//相差值
+                            if (diff == 0) {
+                                item.clockintime = time;
+                            } else if (diff == 1) {
+                                item.clockintime = '昨天' + time;
+                            } else {
+                                item.clockintime = '' + day + time
+                            }
+                        });
+                    },                   
+                    sendMessage: function () {
+                        var _self = this;
+                        XuntongJSBridge.call('chat', {
+                            'openId': _self.recordInfo.openid
+                        }, function (result) {
+                            // alert("结果：" + JSON.stringify(result));
+                        });
+                    },
+                    call: function () {
+                        var _self = this;
+                        XuntongJSBridge.call('freeCall',
+                            {
+                                'openId': _self.recordInfo.openid
+                            },
+                            function (result) {
+                                alert("结果：" + JSON.stringify(result));
+                            }
+                        );
+                    }
+                }
+            })
+        </script>
+    </body>
+
+</html>

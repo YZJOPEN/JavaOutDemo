@@ -1,0 +1,215 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>外出登记</title>
+    <link rel="stylesheet" href="./static/mui.min.css">
+    <link rel="stylesheet" href="./static/mui.picker.css">
+
+    <link rel="stylesheet" href="./static/app.css?t=20185">
+    <script>      
+        var dpr = window.devicePixelRatio;
+        var fontSize = 0;
+        document.documentElement.setAttribute('data-dpr', dpr)
+        fontSize = document.documentElement.clientWidth / 3.75
+        document.documentElement.style.fontSize = fontSize + 'px'
+    </script>
+
+    <body>
+        <div id="app" v-cloak>
+            <div class="oR-addW">
+                <ul class="oR-add">
+                    <li class="disable">
+                        <span class="name">登记人</span>
+                        <span class="left">{{userName}}</span>
+                    </li>
+                    <li>
+                        <span class="name">联系电话</span>
+                        <input type="text" v-model="sendData.phone" class="aR-addTel">
+                    </li>
+                    <li class="disable">
+                        <span class="name">所属部门</span>
+                        <span>{{department}}</span>
+                    </li>
+                    <li>
+                        <span class="name">出发时间
+                            <span class="require">*</span>
+                        </span>
+                        <span class="right" @click="selectTime('outtime')">{{sendData.outtime}}</span>
+                    </li>
+                    <li class="no">
+                        <span class="name">返回时间
+                            <span class="require">*</span>
+                        </span>
+                        <span class="right" @click="selectTime('backtime')">{{sendData.backtime}}</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="oR-addReason">
+                <span class="name">外出事由
+                    <span class="require">*</span>
+                </span>
+                <textarea name="" id="" cols="30" rows="10" maxlength="50" placeholder="请输入外出事由" v-model="sendData.reason"></textarea>
+                <span class="count">{{count}}/50</span>
+            </div>
+            <div class="oR-addSubmit" @click="sendata">
+                提交
+            </div>           
+        </div>
+
+        <script src="./static/vue.min.js"></script>
+        <script src="./static/axios.min.js"></script>
+        <script src="./static/qingjs.min.js"></script>
+        <script src="./static/util.js?t=20185"></script>
+        <script src="./static/mui.min.js"></script>
+        <script src="./static/mui.picker.js"></script>
+        <!-- <script src="./static/mui.popicker.js"></script> -->
+        <script type="text/javascript">
+            var app = new Vue({
+                el: '#app',
+                data: {
+                    userName: '',                    
+                    department: '',
+                    sendData: {
+                        outtime: util.dateFormat(new Date()),
+                        backtime: util.dateFormat(new Date(new Date().getTime() + 1000 * 60 * 60)),
+                        reason: '',
+                        phone:''
+                    },
+                    picker: null,
+                    inChargers: '',
+                    recordId: util.getQuery().id || '',
+                    count:0                  
+                },
+                created: function () {
+                    this.getInfo();
+                    this.recordId && this.getData();
+                    mui.init();
+                    var options = {
+                        "value": this.sendData.outtime,
+                        "beginYear": new Date().getFullYear(),
+                        "endYear": new Date().getFullYear()
+                    }
+                    this.picker = new mui.DtPicker(options);
+                },
+                methods: {
+                    sendata: function () {
+                        var _self = this;
+                        if (!_self.sendData.outtime) {
+                            _self.$toast('出发时间不能为空！');
+                            return
+                        }
+
+                        if (!_self.sendData.backtime) {
+                            _self.$toast('返回时间不能为空！');
+                            return
+                        }
+
+                        if(util.stringToTimestamp(_self.sendData.outtime).getTime() > util.stringToTimestamp(_self.sendData.backtime).getTime()){
+                            _self.$toast('出发时间不能晚于返回时间！');
+                            return
+                        }
+
+                        if (!_self.sendData.reason) {
+                            _self.$toast('外出事由不能为空！');
+                            return
+                        }
+                        mui.confirm('你的外出登记即将提交给负责人：' + _self.inChargers, '', ['取消', '确定'], function (e) {
+                            if (e.index == 1) {
+                                sent()
+                            }
+                        })
+
+                        function sent() {
+                            var params = new URLSearchParams();//注意兼容性
+                            params.append('reqName', 'addrecord');
+                            params.append('outtime', _self.sendData.outtime);
+                            params.append('backtime', _self.sendData.backtime);
+                            params.append('outreason', _self.sendData.reason);
+                            params.append('phone', _self.sendData.phone);
+                            _self.recordId && params.append('recordId', _self.recordId);                                                     
+                            _self.$axios.post('', params//请求外出登记列表数据
+                            ).then(function (res) {
+                                if (res.data.success) {                                    
+                                    _self.$toast({
+                                        success:true
+                                    })
+                                    setTimeout(function () {
+                                        window.location.href = "./outRegInfo.html?id=" + res.data.data.recordId
+                                    }, 1000)
+                                } else {                                    
+                                    _self.$toast(res.data.error)
+                                }
+                            })
+                        }
+                    },
+                    selectTime: function (type) {
+                        var _self = this;
+                        this.picker.show(function (rs) {
+                            _self.sendData[type] = rs.text
+                        });
+                    },
+                    getInfo: function () {
+                        var _self = this;
+                        var params = new URLSearchParams();//注意兼容性
+                        params.append('reqName', 'getuserinfo');                        
+                        _self.$axios.post('', params//请求外出登记列表数据
+                        ).then(function (res) {
+                            if (res.data.success) {
+                                var data = res.data.data;
+                                _self.userName = data.userName;
+                                _self.sendData.phone = data.phone;
+                                _self.department = data.deptName;
+                               var arr = data.inChargers.map(function(item,index){return item.name});
+                               console.log(arr)
+                                _self.inChargers =  arr.join(',')                              
+                            } else {                                
+                                _self.$toast(res.data.error)
+                            }
+                        })
+                    },
+                    getData: function () { //外出登记详情
+                        var _self = this;
+                        var params = new URLSearchParams();//注意兼容性
+                        params.append('reqName', 'selectOneRecord');
+                        params.append('recordid', _self.recordId);                       
+                        this.$axios.post('', params//请求外出登记列表数据
+                        ).then(function (res) {
+                            if (res.data.success) {                              
+                                var data = res.data.data;
+                                _self.sendData.outtime = util.dateFormat(data.outtime);
+                                _self.sendData.backtime = util.dateFormat(data.backtime);
+                                _self.sendData.reason = data.outreason;
+                            } else {
+                                _self.$toast(res.data.error)
+                            }
+                        })
+                    },
+                    selDept: function () {
+                        var _self = this;
+                        XuntongJSBridge.call('selectOrgs',
+                            { 'isMulti': false },
+                            function (result) {
+                                if (result.success == "true") {
+                                    _self.department = result.data.orgs[0].orgName;
+                                }
+                            }
+                        );
+                    }
+                },
+                watch: {
+                    sendData:{
+                        handler(val,oldVal){
+                            this.count = val.reason.length
+                        },
+                        deep:true
+                    }
+                }
+            })
+        </script>
+    </body>
+
+</html>

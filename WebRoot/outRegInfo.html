@@ -1,0 +1,252 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>外出登记</title>
+    <link rel="stylesheet" href="./static/mui.min.css">
+    <link rel="stylesheet" href="./static/app.css?t=20185">
+    <script>      
+        var dpr = window.devicePixelRatio;
+        var fontSize = 0;
+        document.documentElement.setAttribute('data-dpr', dpr)
+        fontSize = document.documentElement.clientWidth / 3.75
+        document.documentElement.style.fontSize = fontSize + 'px'
+    </script>
+
+    <body>
+        <div id="app" v-cloak>
+            <div class="oR-infoW">
+                <div class="oR-addW">
+                    <ul class="oR-add">
+                        <li>
+                            <span class="name">登记人</span>{{recordInfo.username}}
+                        </li>
+                        <li>
+                            <span class="name">所属部门</span>{{recordInfo.deptname}}
+                        </li>
+                        <li>
+                            <span class="name">联系电话</span>{{recordInfo.phone}}
+                        </li>
+                        <li>
+                            <span class="name">出发时间</span>{{recordInfo.outtime}}
+                        </li>
+                        <li>
+                            <span class="name">返回时间</span>{{recordInfo.backtime}}
+                        </li>
+                        <li class="no">
+                            <span class="name fl">外出事由</span>
+                            <span class="oR-info">{{recordInfo.outreason}}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="oR-locationW-fix" id="j_oR-location">
+                <div class="oR-locationW" v-if="locateRecord.length">
+                    <ul class="oR-locationList">
+                        <li v-for="(item,key,index) in locateRecord" :key="key">
+                            <div class="oR-locationTime">{{item.clockintime}}</div>
+                            <p class="oR-location">{{item.position}}</p>
+                        </li>
+                    </ul>
+                </div>
+                <div v-else class="no-locateRe">
+                    外出登记已提交，<br>到了办事地记得签到哦～
+                </div>
+            </div>
+            <div class="oR-addSubmit" @click="setLocation">
+                <span class="puls">+</span> <span>新增办事地址</span> 
+            </div>
+        </div>
+        <script src="./static/vue.min.js"></script>
+        <script src="./static/axios.min.js"></script>
+        <script src="./static/mui.min.js"></script>
+        <script src="./static/qingjs.min.js"></script>
+        <script src="./static/util.js?t=20185"></script>
+        <script type="text/javascript">
+            var app = new Vue({
+                el: '#app',
+                data: {
+                    recordInfo: {
+                        username: '',
+                        deptname: '',
+                        phone: '',
+                        outtime: '',
+                        backtime: '',
+                        outreason: ''
+                    },
+                    locateRecord: [],
+                    recordid: util.getQuery().id
+                },
+                created: function () {
+                    var _self = this;
+                    this.getData()
+                },
+                methods: {
+                    getData: function () { //外出登记详情
+                        var _self = this;
+                        var params = new URLSearchParams();//注意兼容性
+                        params.append('reqName', 'selectOneRecord');
+                        params.append('recordid', _self.recordid);                       
+                        this.$axios.post('', params//请求外出登记列表数据
+                        ).then(function (res) {
+                            if (res.data.success) {
+                              try{
+                                var data = res.data.data;
+                                data.outtime = util.dateFormat(data.outtime);
+                                data.backtime = util.dateFormat(data.backtime);
+                                _self.recordInfo = data;
+                                _self.locateRecord = res.data.data.clonkIns;
+                                _self.timeFormat();
+                                _self.scrollToBottom();
+                                _self.share()
+                              }catch(err){
+                                 _self.$toast(err)
+                              }                                
+                            } else {
+                                _self.$toast(res.data.error)
+                            }
+                        })
+                    },
+                    setLocation: function () {//添加签到
+                        var _self = this;
+                        XuntongJSBridge.call('selectLocation', {
+                            'isLocation': true
+                        }, function (resp) {//调用js桥添加签到
+                            if (resp.success && resp.success == 'true') {
+                                var locData = resp.data;
+                                if (locData.addressdetail) {
+                                    var now = new Date();
+                                    var address = locData.addressdetail;
+                                    var time = util.repairZero(now.getHours()) + ':' + util.repairZero(now.getMinutes());
+
+                                    var params = new URLSearchParams();//注意兼容性
+                                    params.append('reqName', 'addClockIn');
+                                    params.append('recordid', _self.recordid);
+                                    params.append('clockintime', util.dateFormat(now));
+                                    params.append('position', address);                                   
+                                    _self.$axios.post('', params//请求外出登记列表数据
+                                    ).then(function (res) {
+                                        if (res.data.success) {                                           
+                                            _self.locateRecord.push({
+                                                "clockintime": time,
+                                                "position": address
+                                            });
+                                            _self.share();
+                                            _self.scrollToBottom()
+                                        } else {
+                                            _self.$toast(res.data.error)
+                                        }
+                                    })
+                                }
+                            }
+                        });
+                    },
+                    scrollToBottom: function () {
+                        this.$nextTick(() => {
+                            var div = document.getElementById('j_oR-location')
+                            div.scrollTop = div.scrollHeight
+                        })
+                    },
+                    timeFormat: function () {
+                        var _self = this;
+                        var today = new Date().getDate();
+                        this.locateRecord.forEach(function (item, index) {
+                            var outtime = util.stringToTimestamp(item.clockintime);                       
+                            var Month = outtime.getMonth() + 1;//月
+                            var oDate = outtime.getDate();//日
+                            var Hours = outtime.getHours();//时
+                            var Minutes = outtime.getMinutes();//分
+
+                            var day = Month + '月' + oDate + '日';//日期                                     
+                            var time = util.repairZero(Hours) + ':' + util.repairZero(Minutes);//时间                                      
+                            var diff = today - oDate;//相差值
+                            if (diff == 0) {
+                                item.clockintime = time;
+                            } else if (diff == 1) {
+                                item.clockintime = '昨天' + time;
+                            } else {
+                                item.clockintime = '' + day + time
+                            }
+                        });
+                    },                   
+                    share: function () {
+                        var _self = this;
+                        var arr = [{ 'text': '分享', 'callBackId': '1' }];
+                        if(!_self.locateRecord.length){
+                            // alert(_self.locateRecord.length)
+                            arr.push({ 'text': '撤回', 'callBackId': '2' })
+                        }
+                        XuntongJSBridge.call('createPop',
+                            {
+                                'popTitle': '更多',
+                                'popTitleCallBackId': '0',
+                                'items': arr
+                            },
+                            function (resp) {
+                                if (resp.success == true || resp.success == 'true') {
+                                    var callBackId = resp.data ? resp.data.callBackId : '';
+                                    if (callBackId == '1') {
+                                        XuntongJSBridge.call('share',
+                                            {
+                                                'shareType': '4',
+                                                'appId': util.getLocalData('demoappId'),
+                                                'appName': '外出登记',
+                                                'title': _self.recordInfo.username + '的外出登记',
+                                                'content': '内容',
+                                                'thumbData':'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',
+                                                'webpageUrl': 'http://172.20.200.109:8080/JavaOutDemo/outRegInfoAdmin.html?id=' + _self.recordid,
+                                                'cellContent': '提交人：' + _self.recordInfo.username + '\n外出时间：' + _self.recordInfo.outtime + '\n外出事由：' + _self.recordInfo.outreason,
+                                                'sharedObject': 'all',
+                                                'lightAppId': util.getLocalData('demoappId')
+                                            },
+                                            function (result) {
+                                            }
+                                        );
+                                    }
+                                    if (callBackId == '2') {
+                                    	if(_self.locateRecord.length){
+                                            _self.$toast('已有签到记录，无法撤回！')
+                                            return
+                                        }
+                                        mui.confirm('确定要撤回本次外出登记？', '', ['取消', '确定'], function (e) {
+                                            if (e.index == 1) {
+                                                sent()
+                                            }
+                                        })  
+                                        function sent(){                                            
+                                            var params = new URLSearchParams();//注意兼容性
+                                            params.append('reqName', 'recallRecord');
+                                            params.append('recordid', _self.recordid);                       
+                                            _self.$axios.post('', params//请求外出登记列表数据
+                                            ).then(function (res) {
+                                                if (res.data.success) {
+                                                      if(res.data.data.hasClockIns){
+                                                         _self.$toast('已有签到记录，无法撤回！')                                                        
+                                                      }else if(res.data.data.recalled == '1'){
+                                                        // _self.$toast('外出登记已撤回');
+                                                        _self.$toast({
+                                                            success:true
+                                                        })
+                                                        setTimeout(function(){
+                                                            window.location.href = './index.html'
+                                                        },1500)
+                                                      }                
+                                                } else {
+                                                    _self.$toast(res.data.error)
+                                                }
+                                            })
+                                        }
+                                    }
+                                }
+                            }
+                        );
+                    }
+                }
+            })
+        </script>
+    </body>
+
+</html>

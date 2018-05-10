@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.yunzhijia.appdemo.mapper.OutRecordMapper">
+	<resultMap id="BaseResultMap" type="com.yunzhijia.appdemo.pojo.OutRecord">
+		<id column="recordId" property="recordid" jdbcType="VARCHAR" />
+		<result column="openId" property="openid" jdbcType="VARCHAR" />
+		<result column="userName" property="username" jdbcType="VARCHAR" />
+		<result column="contact" property="contact" jdbcType="VARCHAR" />
+		<result column="outTime" property="outtime" jdbcType="TIMESTAMP" />
+		<result column="backTime" property="backtime" jdbcType="TIMESTAMP" />
+		<result column="outReason" property="outreason" jdbcType="VARCHAR" />
+		<result column="orgId" property="orgid" jdbcType="VARCHAR" />
+		<result column="deptName" property="deptname" jdbcType="VARCHAR" />
+		<result column="photoUrl" property="photourl" jdbcType="VARCHAR" />
+		<result column="state" property="state" jdbcType="INTEGER" />
+		<result column="stage" property="stage" jdbcType="INTEGER" />
+		<collection property="clockIns" javaType="java.util.List"
+			ofType="com.yunzhijia.appdemo.pojo.ClockIn">
+			<id column="clockInId" property="clockinid" jdbcType="VARCHAR" />
+			<result column="position" property="position" jdbcType="VARCHAR" />
+			<result column="clockInTime" property="clockintime" jdbcType="TIMESTAMP" />
+			<result column="state" property="state" jdbcType="INTEGER" />
+			<result column="record_id" property="recordId" jdbcType="VARCHAR" />
+		</collection>
+
+	</resultMap>
+	<sql id="Base_Column_List">
+		recordId, userName,contact, DATE_FORMAT(outTime,'%Y-%m-%d %H:%i:%s') AS outTime , DATE_FORMAT(backTime,'%Y-%m-%d %H:%i:%s') AS backTime, outReason, deptName,
+		state, orgId, openId, stage,photoUrl
+	</sql>
+<!-- 	<sql id="Base_Column_List">
+		recordId, userName, outTime, backTime, outReason, deptName,
+		state, orgId, openId, stage,photoUrl
+	</sql> -->
+
+	<select id="selectByTime" resultMap="BaseResultMap"
+		parameterType="java.lang.String" useCache="true">
+		select
+		<include refid="Base_Column_List" />
+		from t_outrecord
+		where 1 = 1
+		<!-- <if test = ''> and DATE_FORMAT(CURDATE(),"%Y-%m") = #{DATE_FORMAT({outTime},"%Y-%m")} 
+			</if> -->
+		<if test='stage == 0'>
+			<!-- and DATE_FORMAT(outTime, '%Y-%m') = #{DATE_FORMAT(CURDATE() , '%Y-%m')} -->
+			and  DATE_FORMAT(outtime,"%Y-%m") = DATE_FORMAT(CURDATE(),"%Y-%m")
+			
+		</if>
+		
+		<if test='stage == 1'>
+			and  DATE_FORMAT(outtime,"%Y-%m") = DATE_FORMAT(CURDATE(),"%Y-%m")
+			
+		</if>
+		
+		<if test='stage == 2'>
+			and  PERIOD_DIFF(DATE_FORMAT( now(),'%Y%m') , DATE_FORMAT(outtime, '%Y%m')) =1
+			
+		</if>
+		
+		<if test='stage == 3'>
+			and  outTime between date_sub(now(),interval 3 month) and now()
+		</if>
+		ORDER BY outTime DESC
+	</select>
+	
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
+		parameterType="java.lang.String" useCache="true">
+		<!-- 有签到记录 -->
+		<if test="condition!=false">
+			SELECT r.recordId, r.orgId, r.userName,r.contact, r.photoUrl, r.deptName , r.openId, DATE_FORMAT(r.outTime,'%Y-%m-%d %H:%i:%s') AS outTime,
+			DATE_FORMAT(r.backTime,'%Y-%m-%d %H:%i:%s') AS backTime, r.outReason, c.clockInId, DATE_FORMAT(c.clockInTime,'%Y-%m-%d %H:%i:%s') AS clockInTime, c.position
+			FROM
+			`t_outrecord` r,t_clockin c
+			where 1=1
+			and r.recordId = c.record_id
+			and recordId = #{recordid,jdbcType=VARCHAR}
+			ORDER BY c.clockInTime DESC
+		</if>
+		<!-- 无签到记录 -->
+		<if test="condition!=true">
+			SELECT r.recordId, r.orgId, r.userName, r.contact, r.photoUrl,r.deptName, r.openId, DATE_FORMAT(r.outTime,'%Y-%m-%d %H:%i:%s') AS outTime,
+			DATE_FORMAT(r.backTime,'%Y-%m-%d %H:%i:%s') AS backTime, r.outReason
+			FROM `t_outrecord` r
+			where 1=1
+			and recordId = #{recordid,jdbcType=VARCHAR}
+		</if>
+		
+		
+
+	</select>
+
+	<select id="selectByReason" resultMap="BaseResultMap"
+		parameterType="java.lang.String" useCache="true">
+		select
+		<include refid="Base_Column_List" />
+		from t_outrecord
+		where outReason like CONCAT(CONCAT('%', #{outreason}), '%') 
+		or userName like CONCAT(CONCAT('%', #{username}), '%')
+		<!-- and orgId = #{orgid,jdbcType=VARCHAR} -->
+		<!-- and state ='1' -->
+		ORDER BY outTime DESC
+	</select>
+	
+	<select id="selectByCondition" resultMap="BaseResultMap"
+		parameterType="java.lang.String" useCache="true">
+		select
+		<include refid="Base_Column_List" />
+		from t_outrecord
+		where 1=1
+		<if test="condition.length()==36">
+		and orgId = #{condition,jdbcType=VARCHAR}
+		</if>
+		<if test="condition.length()==24">
+		and openId = #{condition,jdbcType=VARCHAR}
+		</if>
+		and (outReason like CONCAT(CONCAT('%', #{outreason}), '%') 
+		or userName like CONCAT(CONCAT('%', #{outreason}), '%'))
+		ORDER BY state ASC, outTime DESC
+	</select>
+
+	<select id="listOutRecords" resultMap="BaseResultMap " parameterType="java.lang.String" useCache="true">
+		select <include refid="Base_Column_List" /> from t_outrecord
+		where openId = #{openid,jdbcType=VARCHAR}
+		<!-- and state ='1'  -->
+		
+		<if test='stage == 0'>
+			<!-- and DATE_FORMAT(outTime, '%Y-%m') = #{DATE_FORMAT(CURDATE() , '%Y-%m')} -->
+			<!-- and  DATE_FORMAT(outtime,"%Y-%m") = DATE_FORMAT(CURDATE(),"%Y-%m") -->
+			
+		</if>
+		
+		<if test='stage == 1'>
+			and  DATE_FORMAT(outtime,"%Y-%m") = DATE_FORMAT(CURDATE(),"%Y-%m")
+			
+		</if>
+		
+		<if test='stage == 2'>
+			and  PERIOD_DIFF(DATE_FORMAT( now(),'%Y%m') , DATE_FORMAT(outtime, '%Y%m')) =1
+			
+		</if>
+		
+		<if test='stage == 3'>
+			and  outTime between date_sub(now(),interval 3 month) and now()
+		</if>
+		
+		ORDER BY state ASC, outTime DESC
+		
+	</select>
+	
+	<select id="listOutRecrdsAll" resultMap="BaseResultMap " useCache="true">
+		select recordId, openId, userName, contact, outTime, backTime, outReason,
+		orgId, deptName from t_outrecord
+		<!-- where state ='1' -->
+		ORDER BY state ASC, outTime DESC
+	</select>
+	
+	<select id="listOutRecordsAdmin" resultMap="BaseResultMap " parameterType="java.lang.String" useCache="true">
+		select <include refid="Base_Column_List" /> from t_outrecord
+		where 1=1
+		and orgId = #{orgid,jdbcType=VARCHAR} and openId != #{openid,jdbcType=VARCHAR}
+		
+		<if test='stage == 0'>
+			<!-- and DATE_FORMAT(outTime, '%Y-%m') = #{DATE_FORMAT(CURDATE() , '%Y-%m')} -->
+			<!-- and  DATE_FORMAT(outtime,"%Y-%m") = DATE_FORMAT(CURDATE(),"%Y-%m") -->
+		</if>
+		
+		<if test='stage == 1'>
+			and  DATE_FORMAT(outtime,"%Y-%m") = DATE_FORMAT(CURDATE(),"%Y-%m")
+			
+		</if>
+		
+		<if test='stage == 2'>
+			and  PERIOD_DIFF(DATE_FORMAT( now(),'%Y%m') , DATE_FORMAT(outtime, '%Y%m')) =1
+			
+		</if>
+		
+		<if test='stage == 3'>
+			and  outTime between date_sub(now(),interval 3 month) and now()
+		</if>
+		
+		ORDER BY state ASC, outTime DESC
+	</select>
+
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.String" flushCache="true">
+		delete from t_outrecord
+		where recordId = #{recordid,jdbcType=VARCHAR}
+		ORDER BY outTime DESC
+	</delete>
+	<insert id="insert" parameterType="com.yunzhijia.appdemo.pojo.OutRecord" flushCache="true">
+		insert into t_outrecord (recordId, openId, userName,contact, outTime,
+		backTime, outReason, deptName,photoUrl, orgId,
+		state)
+		values (#{recordid,jdbcType=VARCHAR}, #{openid,jdbcType=VARCHAR},
+		#{username,jdbcType=VARCHAR},#{contact,jdbcType=VARCHAR}, #{outtime,jdbcType=TIMESTAMP},
+		#{backtime,jdbcType=TIMESTAMP}, #{outreason,jdbcType=VARCHAR},
+		#{deptname,jdbcType=VARCHAR},#{photourl,jdbcType=VARCHAR}, #{orgid,jdbcType=VARCHAR},
+		#{state,jdbcType=INTEGER})
+	</insert>
+	<insert id="insertSelective" parameterType="com.yunzhijia.appdemo.pojo.OutRecord" flushCache="true">
+		insert into t_outrecord
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="recordid != null">
+				recordId,
+			</if>
+			<if test="openid != null">
+				openId,
+			</if>
+			<if test="username != null">
+				userName,
+			</if>
+			<if test="contact != null">
+				contact,
+			</if>
+			<if test="outtime != null">
+				outTime,
+			</if>
+			<if test="backtime != null">
+				backTime,
+			</if>
+			<if test="outreason != null">
+				outReason,
+			</if>
+			<if test="deptname != null">
+				deptName,
+			</if>
+			<if test="photourl != null">
+				photoUrl,
+			</if>
+			<if test="orgid != null">
+				orgId,
+			</if>
+			<if test="state != null">
+				state,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="recordid != null">
+				#{recordid,jdbcType=VARCHAR},
+			</if>
+			<if test="openid != null">
+				#{openid,jdbcType=VARCHAR},
+			</if>
+			<if test="username != null">
+				#{username,jdbcType=VARCHAR},
+			</if>
+			<if test="contact != null">
+				#{contact,jdbcType=VARCHAR},
+			</if>
+			<if test="outtime != null">
+				#{outtime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="backtime != null">
+				#{backtime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="outreason != null">
+				#{outreason,jdbcType=VARCHAR},
+			</if>
+			<if test="deptname != null">
+				#{deptname,jdbcType=VARCHAR},
+			</if>
+			<if test="photourl != null">
+				#{photourl,jdbcType=VARCHAR},
+			</if>
+			<if test="orgid != null">
+				#{orgid,jdbcType=VARCHAR},
+			</if>
+			<if test="state != null">
+				#{state,jdbcType=INTEGER},
+			</if>
+		</trim>
+	</insert>
+	<update id="updateByPrimaryKeySelective" parameterType="com.yunzhijia.appdemo.pojo.OutRecord" flushCache="true">
+		update t_outrecord
+		<set>
+			<if test="openid != null">
+				openId = #{openid,jdbcType=VARCHAR},
+			</if>
+			<if test="username != null">
+				userName = #{username,jdbcType=VARCHAR},
+			</if>
+			<if test="contact != null">
+				contact = #{contact,jdbcType=VARCHAR},
+			</if>
+			<if test="outtime != null">
+				outTime = #{outtime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="backtime != null">
+				backTime = #{backtime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="outreason != null">
+				outReason = #{outreason,jdbcType=VARCHAR},
+			</if>
+			<if test="deptname != null">
+				deptName = #{deptname,jdbcType=VARCHAR},
+			</if>
+			<if test="photourl != null">
+				photoUrl = #{photourl,jdbcType=VARCHAR},
+			</if>
+			<if test="orgid != null">
+				deptName = #{orgid,jdbcType=VARCHAR},
+			</if>
+			<if test="state != null">
+				state = #{state,jdbcType=INTEGER},
+			</if>
+		</set>
+		where recordId = #{recordid,jdbcType=VARCHAR}
+	</update>
+	<update id="updateByPrimaryKey" parameterType="com.yunzhijia.appdemo.pojo.OutRecord" flushCache="true">
+		update t_outrecord
+		set userName = #{username,jdbcType=VARCHAR},
+		contact = #{contact,jdbcType=VARCHAR},
+		openId = #{openid,jdbcType=VARCHAR},
+		outTime = #{outtime,jdbcType=TIMESTAMP},
+		backTime = #{backtime,jdbcType=TIMESTAMP},
+		outReason = #{outreason,jdbcType=VARCHAR},
+		deptName = #{deptname,jdbcType=VARCHAR},
+		photoUrl = #{photourl,jdbcType=VARCHAR},
+		orgid = #{orgid,jdbcType=VARCHAR},
+		state = #{state,jdbcType=INTEGER}
+		where recordId = #{recordid,jdbcType=VARCHAR}
+	</update>
+
+</mapper>

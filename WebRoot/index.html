@@ -1,0 +1,351 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>外出登记</title>
+    <script>      
+        var dpr = window.devicePixelRatio;
+        var fontSize = 0;
+        document.documentElement.setAttribute('data-dpr', dpr)
+        fontSize = document.documentElement.clientWidth / 3.75
+        document.documentElement.style.fontSize = fontSize + 'px'
+    </script>
+    <link rel="stylesheet" href="./static/mui.min.css">
+    <link rel="stylesheet" href="./static/app.css?t=2018">
+    <link rel="stylesheet" href="./static/swiper-4.2.2.min.css">
+
+    <body>
+        <div id="app" v-cloak>
+            <!-- 搜索框 -->
+            <div class="oR-search">
+                <input type="text" placeholder="搜索" v-model="searchKey">
+                <span class="mui-icon mui-icon-search"></span>
+            </div>
+            <div v-show="!searchKey">
+                <!-- 管理员筛选 -->
+                <div class="select-type" v-if="isDeptInCharge">
+                    <div class="select-typeL" :class="{ selCur : isShow }" @click="show">
+                        <span>{{arrType[curType]}}</span>
+                        <ul>
+                            <li v-for="(item,index) in arrType" @click="getdata(index)" :class="{ cur : index == curType }">{{item}}</li>
+                        </ul>
+                    </div>
+                    <ul class="select-typeR" v-show="!isShow">
+                        <li :class="{cur : choice == 1}" @click.stop="Choice(1)">团队</li>
+                        <li :class="{cur : choice == 0}" @click.stop="Choice(0)">我的</li>
+                    </ul>
+                </div>
+                <!-- 管理员数据展示 -->
+                <div class="swiper-container" v-if="isDeptInCharge">
+                    <div class="swiper-wrapper">
+                        <!-- 团队外出数据 -->
+                        <div class="swiper-slide">
+                            <ul class="resultList " v-if="outrecords.length">
+                                <li v-for="item in outrecords" @click="gotoInfo(item.recordid)">
+                                    <div class="resultList-head">
+                                        <img :src="item.photoUrl" alt="" class="resultList-img">
+                                        <div class="resultList-hr">
+                                            {{item.username}}
+                                            <!-- <span class="blue">【未提交】</span> -->
+                                            <p class="resultList-time">{{item.outtime}}-{{item.backtime}}</p>
+                                            <span class="sendmessage" @click.stop="sendMessage(item.openid)"></span>
+                                        </div>
+                                    </div>
+                                    <p class="resultList-info">{{item.outreason}}</p>
+                                </li>
+                            </ul>
+                            <div class="block-noResult" v-show="isloaded && !outrecords.length">
+                                暂无外出登记
+                            </div>
+                        </div>
+                        <!-- 个人外出数据 -->
+                        <div class="swiper-slide">
+                            <ul class="resultList " style="width:100%;min-height:1px" v-if="myrecords.length">
+                                <li v-for="item in myrecords" @click="gotoInfo(item.recordid,item.state)">
+                                    <div class="resultList-head">
+                                        <img :src="item.photoUrl" alt="" class="resultList-img">
+                                        <div class="resultList-hr">
+                                            {{item.username}}
+                                            <span class="blue" v-if="item.state == 0">【未提交】</span>
+                                            <p class="resultList-time">{{item.outtime}}-{{item.backtime}}</p>
+                                            <span class="resultList-del" v-if="item.state == 0" @click.stop="del(item.recordid)">删除</span>
+                                        </div>
+                                    </div>
+                                    <p class="resultList-info">{{item.outreason}}</p>
+                                </li>
+                            </ul>
+                            <div class="block-noResult" v-show="isloaded && !myrecords.length">
+                                暂无外出登记
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 成员数据展示 -->
+                <ul class="resultList" v-if="!isDeptInCharge && myrecords.length">
+                    <li v-for="item in myrecords" @click="gotoInfo(item.recordid,item.state)">
+                        <div class="resultList-head">
+                            <img :src="item.photoUrl" alt="" class="resultList-img">
+                            <div class="resultList-hr">
+                                {{item.username}}
+                                <span class="blue" v-if="item.state == 0">【未提交】</span>
+                                <p class="resultList-time">{{item.outtime}}-{{item.backtime}}</p>
+                                <span class="resultList-del" v-if="item.state == 0" @click.stop="del(item.recordid)">删除</span>
+                            </div>
+                        </div>
+                        <p class="resultList-info">{{item.outreason}}</p>
+                    </li>
+                </ul>
+                <div class="block-noResult" v-if="isloaded && !isDeptInCharge && !myrecords.length">
+                    暂无外出登记
+                </div>
+           </div>
+            <!-- 搜索结果展示 -->
+            <ul class="resultList" v-show="searchKey && searchResult.length">
+                <li v-for="item in searchResult" @click="gotoInfo(item.recordid,item.state,item.isMyRecord)">
+                    <div class="resultList-head">
+                        <img :src="item.photoUrl" alt="" class="resultList-img">
+                        <div class="resultList-hr">
+                            {{item.username}}
+                            <span class="blue" v-if="item.state == 0">【未提交】</span>
+                            <p class="resultList-time">{{item.outtime}}-{{item.backtime}}</p>
+                            <span class="resultList-del" v-if="item.state == 0" @click.stop="del(item.recordid)">删除</span>
+                        </div>
+                    </div>
+                    <p class="resultList-info">{{item.outreason}}</p>
+                </li>
+            </ul>
+            <div class="block-noResult" v-show=" searchKey && !searchResult.length">
+                搜索结果为空
+            </div>
+
+            <!-- 新增登记按钮 -->
+            <div class="oR-addSubmit" @click="addNew">
+                <span class="puls">+</span> <span>新增登记</span> 
+            </div>
+            <div class="type-mask" v-show="isShow" @click.stop="show(false)"></div>           
+        </div>
+        <script src="./static/vue.min.js"></script>
+        <script src="./static/axios.min.js"></script>
+        <script src="./static/mui.min.js"></script>
+        <script src="./static/qingjs.min.js"></script>
+        <script src="./static/util.js?t=20185"></script>
+        <script src="./static/zepto.min.js"></script>
+        <script src="./static/swiper-4.2.2.min.js"></script>
+
+        <script type="text/javascript">
+            var app = new Vue({
+                el: '#app',
+                data: {
+                    outrecords: [],//团队外出登记列表数据
+                    myrecords: [],//个人外出登记数据列表                 
+                    isShow: false,//下拉选择显示
+                    arrType: [//时间筛选类别
+                        "全部外出登记",
+                        "本月外出登记",
+                        "上月外出登记",
+                        "近三月外出登记"
+                    ],
+                    isDeptInCharge: false,//是否为管理员
+                    curType: 1,//时间筛选 0：全部   1：本月  2：上月  3：近三月                           
+                    choice: util.getLocalData('DeptInChargeView') == 0 ? 0 : 1,//0 我的  1  团队                    
+                    mySwiper: null,
+                    searchResult:null,//搜索结果
+                    searchKey:'',
+                    isloaded:false,//记录是否加载完成
+                    flag:false
+                },
+                created: function () {                     
+                    this.getdata(1)
+                },
+                methods: {
+                    getdata: function (time) {//获取列表数据 
+                        var _self = this;                        
+                        (time == 0 || time) && (_self.curType = time);
+                        var params = new URLSearchParams();//注意兼容性
+                        params.append('reqName', 'listrecords');
+                        params.append('stage', _self.curType);
+                        params.append('choice', _self.choice);  
+                        _self.isloaded = false;                      
+                        this.$axios.post('', params//请求外出登记列表数据
+                        ).then(function (res) {
+                            if (res.data.success) {
+                                _self.isloaded = true;
+                                _self.isDeptInCharge = res.data.data.isDeptInCharge;                                
+                                if (_self.isDeptInCharge && _self.choice == 1) {
+                                    _self.outrecords = res.data.data.outrecords;
+                                    _self.timeFormat('outrecords');//时间格式化
+                                    _self.flag = true;
+                                } else {
+                                    _self.choice = 0;
+                                    _self.myrecords = res.data.data.outrecords;
+                                    _self.timeFormat('myrecords')//时间格式化
+                                }
+                                var index = _self.choice == 1 ? 0 : 1;
+                                _self.$nextTick(function () {
+                                    var activeHight = $(".swiper-slide").eq(index).height()
+                                    $(".swiper-container").height(activeHight)
+                                })
+                                _self.show('hide')                               
+                            } else {
+                                _self.$toast(res.data.error)
+                            }
+                        })
+                    },
+                    del: function (id) {//删除记录
+                        var _self = this;
+                        mui.confirm('确定要删除这条记录？', '', ['取消', '确定'], function (e) {
+                            if (e.index == 1) {
+                                sent()
+                            }
+                        })
+                        function sent() {
+                            var params = new URLSearchParams();//注意兼容性
+                            params.append('reqName', 'delRecord');
+                            params.append('recordid', id);
+                            _self.$axios.post('', params//请求外出登记列表数据
+                            ).then(function (res) {
+                                if (res.data.success) {
+                                    var index = _self.myrecords.findIndex(function (item) {
+                                        return item.recordid == id
+                                    });
+                                    _self.myrecords.splice(index, 1);
+                                    _self.$toast('已删除')
+                                } else {
+                                    _self.$toast(res.data.error)
+                                }
+                            })
+                        }
+                    },                    
+                    searchSend:function(){
+                        var _self = this;
+                        var params = new URLSearchParams();//注意兼容性
+                        params.append('reqName', 'SELECTRECORDS');
+                        params.append('condition', _self.searchKey);                       
+                        this.$axios.post('', params//请求外出登记列表数据
+                        ).then(function (res) {
+                            if (res.data.success) {
+                                    _self.searchResult = res.data.data.outrecords;
+                                    _self.timeFormat('searchResult')//时间格式化 
+                            } else {
+                                _self.$toast(res.data.error)
+                            }
+                        })
+                    },
+                    addNew: function () {//新增登记跳转
+                        window.location.href = './outRegAdd.html'
+                    },
+                    timeFormat: function (type) {//时间格式化
+                        var today = new Date().getDate();
+                        this[type].forEach(function (item, index) {
+                            var outtime = util.stringToTimestamp(item.outtime);                                                    
+                            var Month = util.repairZero(outtime.getMonth() + 1);//月
+                            var oDate = util.repairZero(outtime.getDate());//日                           
+                            var Hours = util.repairZero(outtime.getHours());//时
+                            var Minutes = util.repairZero(outtime.getMinutes());//分
+
+                            var day = Month + '月' + oDate + '日';//日期                                     
+                            var time = Hours + ':' + Minutes;//时间                                      
+                            var diff = today - oDate;//相差值
+                            if (diff == 0) {
+                                item.outtime = '今天' + time;
+                            } else if (diff == 1) {
+                                item.outtime = '昨天' + time;
+                            } else if (diff == -1) {
+                                item.outtime = '明天' + time;
+                            } else {
+                                item.outtime = '' + day + time
+                            }
+
+                            var backtime = util.stringToTimestamp(item.backtime);
+                            var bMonth = util.repairZero(backtime.getMonth() + 1);//月
+                            var bDate = util.repairZero(backtime.getDate());//日
+                            var bHours = util.repairZero(backtime.getHours());//时
+                            var bMinutes = util.repairZero(backtime.getMinutes());//分
+                            var bday = bMonth + '月' + bDate + '日';//日期                                     
+                            var btime = bHours + ':' + bMinutes;//时间                                      
+                            var bdiff = today - bDate;//日期相差天数
+                            if (Month == bMonth) {
+                                if (bdiff == 0) {
+                                    item.backtime = btime;
+                                } else if (bdiff == 1) {
+                                    item.backtime = (bDate == oDate ? '' : '昨天') + btime;
+                                } else if (bdiff == -1) {
+                                    item.backtime = (bDate == oDate ? '' : '明天') + btime;
+                                } else {
+                                    item.backtime = '' + bday + btime;
+                                }
+                            } else {
+                                item.backtime = '' + bday + btime;
+                            }
+
+                        });
+                    },
+                    show: function (val) {//下拉显示控制
+                        val == 'hide' ? this.isShow = false : this.isShow = !this.isShow
+                    },
+                    Choice: function (val) {//显示切换
+                        this.choice = val;
+                        this.mySwiper.slideTo(val == 0 ? 1 : 0)
+                        return true
+                    },
+                    gotoInfo: function (id,state,mine) {//列表跳转控制                        
+                       mine || this.choice == 0 ? (state == 0 ? (window.location.href = './outRegAdd.html?id=' + id) : (window.location.href = './outRegInfo.html?id=' + id)) :  (window.location.href = './outRegInfoAdmin.html?id=' + id)
+                    },
+                    sendMessage: function (id) {//发送消息js桥
+                        var _self = this;
+                        XuntongJSBridge.call('chat', {
+                            'openId': id
+                        }, function (result) {
+                            // alert("结果：" + JSON.stringify(result));
+                        });
+                    },
+                },
+                watch: {
+                    isShow: function (newVal, oldVal) {
+	                        if (newVal == true) {
+                            document.getElementsByTagName('html')[0].setAttribute("class", "noscroll");
+                            document.getElementsByTagName('body')[0].setAttribute("class", "noscroll");
+                        } else {
+                            document.getElementsByTagName('html')[0].setAttribute("class", "");
+                            document.getElementsByTagName('body')[0].setAttribute("class", "");
+                        }
+                    },
+                    isDeptInCharge: function (newVal, oldVal) {
+                        var _self = this;
+                        if (newVal == true) {  
+                        	var count = 0;
+                            this.$nextTick(function () {
+                                _self.mySwiper = new Swiper('.swiper-container', {
+                                    autoHeight: true,
+                                    initialSlide:_self.choice == 0 ? 1 : 0,
+                                    on: {
+                                    	slideChange: function () { 
+                                            count += 1;                           
+                                            app.choice = this.activeIndex == 0 ? 1 : 0;
+                                            if(count == 1 && _self.choice == 0 && !_self.flag){ return }
+                                            app.getdata(1)
+                                        },
+                                    },
+                                })
+                            })
+                        }
+                    },
+                    searchKey:function(newVal,oldVal){
+                         if(newVal == ''){
+                             this.searchResult = null;
+                         }else{                             
+                            this.searchSend()
+                         }
+                    },
+                    choice:function(newVal){  
+                        util.setLocalData('DeptInChargeView', newVal)//记录最后管理员查看的面板
+                    }
+                }
+            })
+        </script>
+    </body>
+
+</html>
