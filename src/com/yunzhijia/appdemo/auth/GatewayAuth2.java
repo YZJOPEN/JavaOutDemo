@@ -3,9 +3,11 @@ package com.yunzhijia.appdemo.auth;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import com.alibaba.fastjson.JSONObject;
+import com.yunzhijia.appdemo.service.TokenService;
 import com.yunzhijia.appdemo.util.HttpHelper;
 import com.yunzhijia.appdemo.vo.UserContext;
 
@@ -16,8 +18,13 @@ public class GatewayAuth2 {
 	private static final int timeoutMillis = 3000;
 	@Value("${APP.SECRET}")
 	private String appSecret;
+	@Value("${APP.ERPSECRET}")
+	private String erpSecret;
 	@Value("${YUNZHIJIA.GATEWAY.HOST}")
 	private String gatewayHost;
+	
+	@Autowired
+	private TokenService tokenService;
 	
 	/**
 	 * 校验用户上下文是否失效
@@ -38,7 +45,7 @@ public class GatewayAuth2 {
      */
     public UserContext getUserContext(String ticket, String appId) throws Exception {
     	String scope = "app";
-		String url = gatewayHost.concat("/ticket/user/acquirecontext?accessToken=").concat(getAccessToken(appId, appSecret, null, scope));
+		String url = gatewayHost.concat("/ticket/user/acquirecontext?accessToken=").concat(tokenService.getAccessToken(appId, appSecret, null, scope));
 		Map parm = new HashMap(2);
 		parm.put("appid", appId); parm.put("ticket", ticket);
 		Map headers = new HashMap(1); headers.put("Content-Type", APPLICATION_JSON);
@@ -95,7 +102,7 @@ public class GatewayAuth2 {
     	}if(scope.equals(SCOPES[2])) {
     		// 获取resGroupSecret秘钥
     		parm.put("eid", eid);
-    		secret = "FUu0NuO1lGsQjgWjATYOy46kLysjIV6d";
+    		secret = erpSecret;
     	}
     	parm.put("secret", secret);
     	String url = gatewayHost.concat("/oauth2/token/getAccessToken");
@@ -109,7 +116,7 @@ public class GatewayAuth2 {
      * @return
      * @throws Exception
      */
-    public String gatewayRequestJson(String url, String parm) throws Exception {
+    public static String gatewayRequestJson(String url, String parm) throws Exception {
 		Map headers = new HashMap(1); headers.put("Content-Type", APPLICATION_JSON);
 		return HttpHelper.post(headers, parm, url, timeoutMillis);
     }

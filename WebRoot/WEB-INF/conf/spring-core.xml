@@ -13,7 +13,7 @@
 		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
 		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 	<context:annotation-config/>
-	<context:component-scan base-package="com.yunzhijia.appdemo.service,com.yunzhijia.appdemo.auth" />
+	<context:component-scan base-package="com.yunzhijia.appdemo.service,com.yunzhijia.appdemo.auth,com.yunzhijia.appdemo.dao" />
 	<util:properties id="sysconfig" location="/WEB-INF/conf/appconfig.properties" />
 	<context:property-placeholder  properties-ref="sysconfig"/>
 	

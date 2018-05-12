@@ -31,6 +31,9 @@ public class AppService {
 	@Autowired
 	private GatewayAuth2 gatewayAuth2;
 	
+	@Autowired
+	private TokenService tokenService;
+	
 	@Autowired 
 	private OutRecordService outRecordService;
 	
@@ -359,7 +362,7 @@ public class AppService {
 	public void todoAction(UserContext userContext) throws Exception {
 		String scope = "app";
 		gatewayAuth2.checkValid(userContext);
-		String url = gatewayHost.concat("/newtodo/open/action.json?accessToken=").concat(gatewayAuth2.getAccessToken(userContext.getAppid(), appSecret, null, scope));
+		String url = gatewayHost.concat("/newtodo/open/action.json?accessToken=").concat(tokenService.getAccessToken(userContext.getAppid(), appSecret, null, scope));
 		String appId = userContext.getAppid(), openId = userContext.getOpenid();
 		Map actiontype = new HashMap(3);
         actiontype.put("read", 1); actiontype.put("deal", 1);
@@ -376,7 +379,7 @@ public class AppService {
 		String scope = "app";
 		gatewayAuth2.checkValid(userContext);
 		JSONObject jsonObject = this.getPerson(userContext);
-		String url = gatewayHost.concat("/newtodo/open/generatetodo.json?accessToken=").concat(gatewayAuth2.getAccessToken(userContext.getAppid(), appSecret, null, scope));
+		String url = gatewayHost.concat("/newtodo/open/generatetodo.json?accessToken=").concat(tokenService.getAccessToken(userContext.getAppid(), appSecret, null, scope));
 		String appId = userContext.getAppid(), openId = userContext.getOpenid();
 		Map parameters = new HashMap(9);
         Map status = new HashMap(2);
@@ -402,7 +405,7 @@ public class AppService {
 		String scope = "app";
 		gatewayAuth2.checkValid(userContext);
 		String url = gatewayHost.concat("/opendata-control/data/getperson?accessToken=")
-				.concat(gatewayAuth2.getAccessToken(userContext.getAppid(), appSecret, null, scope));
+				.concat(tokenService.getAccessToken(userContext.getAppid(), appSecret, null, scope));
 		Map parameters = new HashMap(2);
 		parameters.put("openId", userContext.getOpenid());
 		parameters.put("eid", userContext.getEid());
@@ -414,7 +417,7 @@ public class AppService {
 		String scope = "app";
 		gatewayAuth2.checkValid(userContext);
 		String url = gatewayHost.concat("/opendata-control/data/getperson?accessToken=")
-				.concat(gatewayAuth2.getAccessToken(userContext.getAppid(), appSecret, null, scope));
+				.concat(tokenService.getAccessToken(userContext.getAppid(), appSecret, null, scope));
 		Map parameters = new HashMap(2);
 		parameters.put("openId", openId);
 		parameters.put("eid", userContext.getEid());
@@ -428,7 +431,7 @@ public class AppService {
 		List<String> openIds = new ArrayList<String>();
 		openIds.add(userContext.getOpenid());
 		gatewayAuth2.checkValid(userContext);
-		String url = gatewayHost.concat("/openimport/open/person/get?accessToken=").concat(gatewayAuth2.getAccessToken(userContext.getAppid(), appSecret, userContext.getEid(), scope));
+		String url = gatewayHost.concat("/openimport/open/person/get?accessToken=").concat(tokenService.getAccessToken(userContext.getAppid(), appSecret, userContext.getEid(), scope));
 		Map parameters = new HashMap(2); 
 		parameters.put("eid", userContext.getEid());
 		JSONObject jo=new JSONObject();
@@ -449,7 +452,8 @@ public class AppService {
 		List<String> openIds = new ArrayList<String>();
 		openIds.add(userContext.getOpenid());
 		gatewayAuth2.checkValid(userContext);
-		String url = gatewayHost.concat("/openimport/open/person/get?accessToken=").concat(gatewayAuth2.getAccessToken(userContext.getAppid(), appSecret, userContext.getEid(), scope));
+//		String url = gatewayHost.concat("/openimport/open/person/get?accessToken=").concat(gatewayAuth2.getAccessToken(userContext.getAppid(), appSecret, userContext.getEid(), scope));
+		String url = gatewayHost.concat("/openimport/open/person/get?accessToken=").concat(tokenService.getAccessToken(userContext.getAppid(), appSecret, userContext.getEid(), scope));
 		Map parameters = new HashMap(2); 
 		parameters.put("eid", userContext.getEid());
 		JSONObject jo=new JSONObject();
@@ -469,7 +473,7 @@ public class AppService {
 		String scope = "app";
 		gatewayAuth2.checkValid(userContext);
 		JSONObject jsonObject = this.getPerson(userContext);
-		String url = gatewayHost.concat("/opendata-control/data/getorgpersons?accessToken=").concat(gatewayAuth2.getAccessToken(userContext.getAppid(), appSecret, null, scope));
+		String url = gatewayHost.concat("/opendata-control/data/getorgpersons?accessToken=").concat(tokenService.getAccessToken(userContext.getAppid(), appSecret, null, scope));
 		Map parameters = new HashMap(2); parameters.put("orgId", jsonObject.getString("orgId"));
 		parameters.put("eid", userContext.getEid()); parameters.put("begin", "0");
 		parameters.put("count", "10");
@@ -481,7 +485,7 @@ public class AppService {
 		String scope = "app";
 		gatewayAuth2.checkValid(userContext);
 		JSONObject jsonObject = this.getPerson(userContext);
-		String url = gatewayHost.concat("/opendata-control/data/getcompany?accessToken=").concat(gatewayAuth2.getAccessToken(userContext.getAppid(), appSecret, null, scope));
+		String url = gatewayHost.concat("/opendata-control/data/getcompany?accessToken=").concat(tokenService.getAccessToken(userContext.getAppid(), appSecret, null, scope));
 		Map parameters = new HashMap(2); parameters.put("orgId", jsonObject.getString("orgId"));
 		parameters.put("eid", userContext.getEid());
 		String ret = gatewayAuth2.gatewayRequest(url, parameters);
@@ -491,7 +495,7 @@ public class AppService {
 	public JSONArray getAllOrgs(UserContext userContext) throws Exception {
 		String scope = "app";
 		gatewayAuth2.checkValid(userContext);
-		String url = gatewayHost.concat("/opendata-control/data/getallorgs?accessToken=").concat(gatewayAuth2.getAccessToken(userContext.getAppid(), appSecret, null, scope));
+		String url = gatewayHost.concat("/opendata-control/data/getallorgs?accessToken=").concat(tokenService.getAccessToken(userContext.getAppid(), appSecret, null, scope));
 		Map parameters = new HashMap(2); parameters.put("eid", userContext.getEid());
 		parameters.put("begin", "0"); parameters.put("count", "10");
 		String ret = gatewayAuth2.gatewayRequest(url, parameters);
@@ -502,7 +506,8 @@ public class AppService {
 		String scope = "app";
 		gatewayAuth2.checkValid(userContext);
 		JSONObject jsonObject = this.getPerson(userContext);
-		String url = gatewayHost.concat("/opendata-control/data/getorg?accessToken=").concat(gatewayAuth2.getAccessToken(userContext.getAppid(), appSecret, null, scope));
+//		String url = gatewayHost.concat("/opendata-control/data/getorg?accessToken=").concat(gatewayAuth2.getAccessToken(userContext.getAppid(), appSecret, null, scope));
+		String url = gatewayHost.concat("/opendata-control/data/getorg?accessToken=").concat(tokenService.getAccessToken(userContext.getAppid(), appSecret, null, scope));
 		if(StringUtils.isEmpty(jsonObject.getString("orgId"))) throw new RuntimeException("该员工要先移动到部门^^");
 		Map parameters = new HashMap(2); parameters.put("orgId", jsonObject.getString("orgId"));
 		parameters.put("eid", userContext.getEid());
@@ -513,7 +518,7 @@ public class AppService {
 	public JSONObject getparentperson(UserContext userContext) throws Exception {
 		String scope = "app";
 		gatewayAuth2.checkValid(userContext);
-		String url = gatewayHost.concat("/opendata-control/data/getparentperson?accessToken=").concat(gatewayAuth2.getAccessToken(userContext.getAppid(), appSecret, null, scope));
+		String url = gatewayHost.concat("/opendata-control/data/getparentperson?accessToken=").concat(tokenService.getAccessToken(userContext.getAppid(), appSecret, null, scope));
 		Map parameters = new HashMap(2); parameters.put("openId", userContext.getOpenid());
 		parameters.put("eid", userContext.getEid());
 		String ret = gatewayAuth2.gatewayRequest(url, parameters);
