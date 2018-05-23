@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>外出登记</title>
-    <link rel="stylesheet" href="./static/app.css?t=20185">
+    <link rel="stylesheet" href="./static/app.css?t=20186">
     <script>      
         var dpr = window.devicePixelRatio;
         var fontSize = 0;
@@ -68,7 +68,7 @@
         <script src="./static/vue.min.js"></script>
         <script src="./static/axios.min.js"></script>
         <script src="./static/qingjs.min.js"></script>
-        <script src="./static/util.js?t=20185"></script>
+        <script src="./static/util.js?t=20186"></script>
         <script type="text/javascript">
             var app = new Vue({
                 el: '#app',
@@ -125,10 +125,10 @@
 
                             var day = Month + '月' + oDate + '日';//日期                                     
                             var time = util.repairZero(Hours) + ':' + util.repairZero(Minutes);//时间                                      
-                            var diff = today - oDate;//相差值
+                            var diff = util.whichDay(outtime);//相差值
                             if (diff == 0) {
                                 item.clockintime = time;
-                            } else if (diff == 1) {
+                            } else if (diff == -1) {
                                 item.clockintime = '昨天' + time;
                             } else {
                                 item.clockintime = '' + day + time

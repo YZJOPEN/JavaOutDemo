@@ -1,3 +1,15 @@
+/**
+* 版权所有：深圳云之家网络科技有限公司
+* Copyright 2018 yunzhijia.com Inc.
+* All right reserved. 
+*====================================================
+* 文件名称: BaseController.java
+* 修订记录：
+* No    日期				作者(操作:具体内容)
+* 1.    May 20, 2018	wangzy,yz(创建:创建文件)
+*====================================================
+* 类描述：http请求帮助类
+*/
 package com.yunzhijia.appdemo.util;
 
 import java.io.UnsupportedEncodingException;

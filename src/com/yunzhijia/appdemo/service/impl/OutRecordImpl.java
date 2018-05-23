@@ -49,11 +49,6 @@ public class OutRecordImpl implements OutRecordService {
 	}
 
 	@Override
-	public List<OutRecord> selectByTime(Integer stage) {
-		return outRecordMapper.selectByTime(stage);
-	}
-
-	@Override
 	public int delRecord(String recordid) {
 		return outRecordMapper.deleteByPrimaryKey(recordid);
 	}

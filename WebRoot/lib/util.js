@@ -104,7 +104,7 @@ params.append('appid', util.getQuery().appid || util.getQuery().client_id || uti
 params.append('ticket', util.getQuery().ticket || util.getLocalData('demoticket'));
 
 Vue.prototype.$axios = axios.create({
-    baseURL: '/JavaOutDemo/app/request',
+    baseURL: '/j2eedemo/app/request',
     timeout: 10000,
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     params: params

@@ -1,3 +1,15 @@
+/**
+* 版权所有：深圳云之家网络科技有限公司
+* Copyright 2017 yunzhijia.com Inc.
+* All right reserved. 
+*====================================================
+* 文件名称: GatewayAuth2.java
+* 修订记录：
+* No    日期				作者(操作:具体内容)
+* 1.    Dec 21, 2017	wangzy(创建:创建文件)
+*====================================================
+* 类描述：基于oauth2.0请求提交
+*/
 package com.yunzhijia.appdemo.auth;
 
 import java.util.HashMap;
@@ -17,6 +29,7 @@ public class GatewayAuth2 {
 	private static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
 	private static final int timeoutMillis = 3000;
 	@Value("${APP.SECRET}")
+	// 工作圈内用于erp同步的secret
 	private String appSecret;
 	@Value("${APP.ERPSECRET}")
 	private String erpSecret;
@@ -54,31 +67,6 @@ public class GatewayAuth2 {
 		return userContext;
 	}
     
-    /**
-     * 根据资源类型获取accessToken
-     * @param appId
-     * @param secret(appSecret或resGroupSecret)
-     * @param eid
-     * @param scope
-     * @return
-     * @throws Exception
-     */
-   /* public String getAccessToken(String appId, String secret, String eid, String scope) throws Exception {
-    	//String nonceStr = Long.toString(Long.valueOf(String.valueOf(Math.random()).substring(2)), 36), 
-    			//timestamp = String.valueOf(System.currentTimeMillis());
-    	final String[] SCOPES = {"app", "team", "resGroupSecret"};
-    	String timestamp = String.valueOf(System.currentTimeMillis());
-    	Map parm = new HashMap(5);
-    	parm.put("scope", scope); parm.put("timestamp", timestamp);
-    	parm.put("secret", secret);
-    	if(scope.equals(SCOPES[0])) {
-    		parm.put("appId", appId);
-    	} else if(scope.equals(SCOPES[1])) {
-    		parm.put("eid", eid);
-    	} else if(scope.equals(SCOPES[2])) {}
-    	String url = gatewayHost.concat("/oauth2/token/getAccessToken");
-    	return JSONObject.parseObject(gatewayRequestJson(url, JSONObject.toJSONString(parm))).getJSONObject("data").getString("accessToken");
-    }*/
     /**
      * 根据资源类型获取accessToken
      * @param appId

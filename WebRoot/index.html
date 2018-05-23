@@ -14,9 +14,13 @@
         document.documentElement.style.fontSize = fontSize + 'px'
     </script>
     <link rel="stylesheet" href="./static/mui.min.css">
-    <link rel="stylesheet" href="./static/app.css?t=2018">
+    <link rel="stylesheet" href="./static/app.css?t=20186">
     <link rel="stylesheet" href="./static/swiper-4.2.2.min.css">
-
+    <style type="text/css">
+      .swiper-container{
+        min-height:3rem;
+      }
+    </style>
     <body>
         <div id="app" v-cloak>
             <!-- 搜索框 -->
@@ -131,7 +135,7 @@
         <script src="./static/axios.min.js"></script>
         <script src="./static/mui.min.js"></script>
         <script src="./static/qingjs.min.js"></script>
-        <script src="./static/util.js?t=20185"></script>
+        <script src="./static/util.js?t=20186"></script>
         <script src="./static/zepto.min.js"></script>
         <script src="./static/swiper-4.2.2.min.js"></script>
 
@@ -212,6 +216,9 @@
                                         return item.recordid == id
                                     });
                                     _self.myrecords.splice(index, 1);
+                                    setTimeout(function(){
+                                    	_self.mySwiper.update()
+                                    },0)
                                     _self.$toast('已删除')
                                 } else {
                                     _self.$toast(res.data.error)
@@ -238,22 +245,26 @@
                         window.location.href = './outRegAdd.html'
                     },
                     timeFormat: function (type) {//时间格式化
+                        var _self = this;
                         var today = new Date().getDate();
                         this[type].forEach(function (item, index) {
-                            var outtime = util.stringToTimestamp(item.outtime);                                                    
+                            var outtime = util.stringToTimestamp(item.outtime); 
+
                             var Month = util.repairZero(outtime.getMonth() + 1);//月
                             var oDate = util.repairZero(outtime.getDate());//日                           
                             var Hours = util.repairZero(outtime.getHours());//时
                             var Minutes = util.repairZero(outtime.getMinutes());//分
 
                             var day = Month + '月' + oDate + '日';//日期                                     
-                            var time = Hours + ':' + Minutes;//时间                                      
-                            var diff = today - oDate;//相差值
+                            var time = Hours + ':' + Minutes;//时间   
+
+                            var diff = util.whichDay(outtime);//相差值
+
                             if (diff == 0) {
                                 item.outtime = '今天' + time;
-                            } else if (diff == 1) {
-                                item.outtime = '昨天' + time;
                             } else if (diff == -1) {
+                                item.outtime = '昨天' + time;
+                            } else if (diff == 1) {
                                 item.outtime = '明天' + time;
                             } else {
                                 item.outtime = '' + day + time
@@ -266,21 +277,23 @@
                             var bMinutes = util.repairZero(backtime.getMinutes());//分
                             var bday = bMonth + '月' + bDate + '日';//日期                                     
                             var btime = bHours + ':' + bMinutes;//时间                                      
-                            var bdiff = today - bDate;//日期相差天数
-                            if (Month == bMonth) {
+                            var bdiff = util.whichDay(backtime);//日期相差天数
+                            
                                 if (bdiff == 0) {
-                                    item.backtime = btime;
-                                } else if (bdiff == 1) {
-                                    item.backtime = (bDate == oDate ? '' : '昨天') + btime;
+                                    item.backtime = (diff == 0 ? '' : '今天') + btime;
                                 } else if (bdiff == -1) {
-                                    item.backtime = (bDate == oDate ? '' : '明天') + btime;
+                                    item.backtime = (bDate == oDate ? '' : diff == -1 ? '' : '昨天') + btime;
+                                } else if (bdiff == 1) {
+                                    item.backtime = (bDate == oDate ? '' : diff == 1 ? '' : '明天') + btime;
                                 } else {
-                                    item.backtime = '' + bday + btime;
+                                    if(outtime.setHours(0,0,0,0) == backtime.setHours(0,0,0,0)){
+                                        item.backtime = '' + btime;
+                                    }else if( bMonth == Month){
+                                        item.backtime = '' + bDate + '日' + btime;
+                                    }else{
+                                        item.backtime = '' + bday + btime
+                                    }
                                 }
-                            } else {
-                                item.backtime = '' + bday + btime;
-                            }
-
                         });
                     },
                     show: function (val) {//下拉显示控制

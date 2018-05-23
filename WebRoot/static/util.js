@@ -32,6 +32,19 @@ var util = {//工具
     },
     stringToTimestamp:function(dataString){           
          return (new Date(dataString.replace(/-/g, "/")))
+    },
+    whichDay:function(date){
+        var today = new Date();
+        var oneDay = 24*60*60*1000 
+        if(date.setHours(0,0,0,0) == today.setHours(0,0,0,0)){
+            return 0;
+        } 
+        if(date.setHours(0,0,0,0) == today.setHours(0,0,0,0) - oneDay){
+            return -1;
+        }
+        if(date.setHours(0,0,0,0) == today.setHours(0,0,0,0) + oneDay){
+            return 1
+        }                                
     }
 };
 //提示信息
@@ -150,7 +163,7 @@ params.append('appid', util.getQuery().appid || util.getQuery().client_id || uti
 params.append('ticket', util.getQuery().ticket || util.getLocalData('demoticket'));
 
 Vue.prototype.$axios = axios.create({
-    baseURL: '/JavaOutDemo/app/request',
+    baseURL: '/j2eedemo/app/request',
     timeout: 10000,
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     params: params

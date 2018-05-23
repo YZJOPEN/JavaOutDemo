@@ -1,3 +1,15 @@
+/**
+* 版权所有：深圳云之家网络科技有限公司
+* Copyright 2018 yunzhijia.com Inc.
+* All right reserved. 
+*====================================================
+* 文件名称: AppController.java
+* 修订记录：
+* No    日期				作者(操作:具体内容)
+* 1.    May 23, 2018	wangzy, yz(创建:创建文件)
+*====================================================
+* 类描述：Controller 逻辑控制
+*/
 package com.yunzhijia.appdemo.controller;
 
 import java.util.Map;
@@ -19,11 +31,6 @@ import com.yunzhijia.appdemo.vo.UserContext;
 @Controller
 @RequestMapping("/app")
 public class AppController extends BaseController {
-	
-	public AppController() {
-		System.out.println("This is AppController");
-	}
-	
 	private Logger logger = LoggerFactory.getLogger(AppController.class);
 	@Autowired
 	private AppService appService;
@@ -32,45 +39,33 @@ public class AppController extends BaseController {
 	
 	private enum REQUEST_TYPE {
 		GETUSERINFO, SENDTODO, GETPERSON, GETORGPERSONS, GETCOMPANY, GETALLORGS, GETORG, TODOACTION, 
-		LISTRECORDS, ADDRECORD, SELECTRECORDS, SELECTONERECORD, SELECTBYTIME,DELRECORD,ADDCLOCKIN,
+		LISTRECORDS, ADDRECORD, SELECTRECORDS, SELECTONERECORD, DELRECORD,ADDCLOCKIN,
 		RECALLRECORD
 	}
 	@RequestMapping(value = "/request", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
 	@ResponseBody
 	public Object doRequest(HttpServletRequest request) {
 		Map<String, Object> response = this.initMessage();
+		// 请求类型
 		REQUEST_TYPE requestType = REQUEST_TYPE.valueOf(request.getParameter("reqName").toUpperCase());
-		
+		// 外出登记事由
 		String outreason = request.getParameter("condition");
 		String recordid = request.getParameter("recordid");
-		
 		UserContext userContext = (UserContext) request.getAttribute("userContext");
 		try {
 			switch (requestType) {
-			case GETORG:
-				response.put("data", appService.getOrg(userContext));
-				break;
 			case GETUSERINFO:
 				response.put("data", appService.getUserInfo(userContext));
-				break;
-			case SENDTODO:
-				appService.sendTodo(userContext);
-				break;
-			case TODOACTION:
-				appService.todoAction(userContext);
 				break;
 			case LISTRECORDS:
 				response.put("data",appService.listOutRecords(userContext,request));
 				break;
 			case SELECTRECORDS:
-				response.put("data",appService.selectRecords(outreason,userContext));
+				response.put("data",appService.selectRecords(outreason, userContext));
 				break;
 			case SELECTONERECORD:
 				response.put("data",appService.selectOneRecord(userContext, recordid));
 				break;
-//			case SELECTBYTIME:
-//				response.put("data",appService.selectByTime(userContext, stageTime));
-//				break;
 			case ADDRECORD:
 				response.put("data",appService.addOutRecords(userContext,request));
 				break;

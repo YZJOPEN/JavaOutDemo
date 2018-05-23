@@ -1,3 +1,16 @@
+/**
+* 版权所有：深圳云之家网络科技有限公司
+* Copyright 2018 yunzhijia.com Inc.
+* All right reserved. 
+*====================================================
+* 文件名称: BaseController.java
+* 修订记录：
+* No    日期				作者(操作:具体内容)
+* 1.    May 20, 2018	yz(创建:创建文件)
+*====================================================
+* 类描述：外出登记业务逻辑实现
+*/
+
 package com.yunzhijia.appdemo.service;
 
 import java.text.DateFormat;
@@ -19,98 +32,68 @@ import com.alibaba.fastjson.JSONObject;
 import com.yunzhijia.appdemo.auth.GatewayAuth2;
 import com.yunzhijia.appdemo.pojo.ClockIn;
 import com.yunzhijia.appdemo.pojo.OutRecord;
+import com.yunzhijia.appdemo.util.MobileRandomNum;
 import com.yunzhijia.appdemo.vo.UserContext;
 
 @Service
 public class AppService {
-	
-	public AppService() {
-		System.out.println("This is AppService");
-	}
-	
 	@Autowired
 	private GatewayAuth2 gatewayAuth2;
-	
 	@Autowired
 	private TokenService tokenService;
-	
 	@Autowired 
 	private OutRecordService outRecordService;
-	
 	@Autowired
 	private ClockInService clockInService;
-	
 	@Value("${YUNZHIJIA.GATEWAY.HOST}")
 	private String gatewayHost;
 	@Value("${LOCAL.HOST}")
 	private String localHost;
 	@Value("${APP.SECRET}")
 	private String appSecret;
+	@Value("${APP.ERPSECRET}")
+	private String erpSecret;
 	
 	/**
-	 * 
+	 * 获取用户信息
+	 * 注意：手机号系用户隐私信息，故此处手机号用于随机产生，正式投入使用时，请联合通讯录API以及云之家通讯录同步秘钥获取当前用户手机号，参考方法getErpPerson()
 	 * @param userContext
 	 * @return
 	 * @throws Exception
 	 */
 	public JSONObject getUserInfo(UserContext userContext) throws Exception {
-//		JSONArray inChargers = this.getparentperson(userContext).getJSONArray("selectParentPersons");//获取汇报上级
-		JSONArray inChargers = this.getOrg(userContext).getJSONArray("inChargers");
-		String phone = this.getErpPerson(userContext).getString("phone");
-		boolean isDeptInCharge = isDeptInCharge(userContext);
+		String phone = MobileRandomNum.getRandomMobile();
+		JSONObject personInfo = this.getPerson(userContext);
+		JSONObject orgInfo = this.getOrg(userContext, personInfo.getString("orgId"));
+		boolean isDeptInCharge = isDeptInCharge(userContext, orgInfo.getJSONArray("inChargers"));
 		gatewayAuth2.checkValid(userContext);
-		JSONObject jsonObject = this.getPerson(userContext);
 		JSONObject ret = new JSONObject();
 		ret.put("openId", userContext.getOpenid());
 		ret.put("userId", userContext.getUserid());
-		ret.put("userName", jsonObject.getString("name"));
-		ret.put("deptName", jsonObject.getString("department"));
+		ret.put("userName", personInfo.getString("name"));
+		ret.put("deptName", orgInfo.getString("name"));
 		ret.put("isDeptInCharge", isDeptInCharge);
 		ret.put("phone", phone);
-		ret.put("inChargers", inChargers);
+		ret.put("inChargers", orgInfo.getJSONArray("inChargers"));
 		return ret;
 	}
-	/**
-	 * 
-	 * @param userContext
-	 * @param recordId
-	 * @return
-	 * @throws Exception
-	 */
-	/*public JSONObject updateOutRecord(UserContext userContext,String recordId) throws Exception {
-		String phone = this.getErpPerson(userContext).getString("phone");
-		boolean isDeptInCharge = isDeptInCharge(userContext);
-		gatewayAuth2.checkValid(userContext);
-		JSONObject jsonObject = this.getPerson(userContext);
-		JSONObject ret = new JSONObject();
-		ret.put("openId", userContext.getOpenid());
-		ret.put("userId", userContext.getUserid());
-		ret.put("userName", jsonObject.getString("name"));
-		ret.put("deptName", jsonObject.getString("department"));
-		ret.put("isDeptInCharge", isDeptInCharge);
-		ret.put("phone", phone);
-		return ret;
-	}*/
-	
 
 	/**
-	 * 
+	 * 获取外出登记记录
 	 * @return
 	 * @throws Exception
 	 */
 	public JSONObject listOutRecords(UserContext userContext,HttpServletRequest request) throws Exception {
 		gatewayAuth2.checkValid(userContext);
 		String stage = request.getParameter("stage");
-		String choice = request.getParameter("choice"); // 区分我的（0）团队（1）
-		Integer stageTime = stage!=null?Integer.parseInt(stage):0;
+		String choice = request.getParameter("choice"); // 区分我的（1）团队（0）
+		Integer stageTime = stage!=null ? Integer.parseInt(stage) : 0;
 		List<OutRecord> outRecords = new ArrayList<OutRecord>();
-		boolean isDeptInCharge = isDeptInCharge(userContext);
-		String orgId = this.getOrg(userContext).getString("orgId");
+		JSONObject jsonObject = this.getPerson(userContext);
+		jsonObject = this.getOrg(userContext, jsonObject.getString("orgId"));
+		boolean isDeptInCharge = isDeptInCharge(userContext, jsonObject.getJSONArray("inChargers"));
+		String orgId = jsonObject.getString("orgId");
 		String openId = userContext.getOpenid();
-		
-//		System.out.println("orgId.length()========"+orgId.length());
-//		System.out.println("openId.length()========"+openId.length());
-		
 		if (isDeptInCharge) {
 			if (choice!=null && choice.equals("0")) {
 				outRecords = outRecordService.listOutRecrds(openId,stageTime);
@@ -137,13 +120,13 @@ public class AppService {
 			ret.put("state", outRecord.getState());
 			ja.add(ret);
 		}
-		rets.put("isDeptInCharge", isDeptInCharge(userContext));
+		rets.put("isDeptInCharge", isDeptInCharge);
 		rets.put("outrecords", ja);
 		return rets;
 	}
 	
 	/**
-	 * 
+	 * 登记删除
 	 * @param recordid 外出登记ID
 	 * @return
 	 * @throws Exception
@@ -160,7 +143,7 @@ public class AppService {
 	}
 	
 	/**
-	 * 
+	 * 登记撤回
 	 * @param recordid 外出登记ID
 	 * @return
 	 * @throws Exception
@@ -186,8 +169,9 @@ public class AppService {
 		}
 		return ret;
 	}
+	
 	/**
-	 * 
+	 * 外出登记
 	 * @param userContext
 	 * @param request
 	 * @return
@@ -198,13 +182,18 @@ public class AppService {
 		OutRecord outRecord = new OutRecord();
 		String recordId = request.getParameter("recordId");
 		String outreason = request.getParameter("outreason");
-		String outtime = request.getParameter("outtime");
-		String backtime = request.getParameter("backtime");
-		String orgId = this.getOrg(userContext).getString("orgId");
-		String deptname = this.getOrg(userContext).getString("name");
-//		String deptname = request.getParameter("deptname");
+		// for mysql
+//		String outtime = request.getParameter("outtime");
+//		String backtime = request.getParameter("backtime");
+		// to match h2 db
+		String outtime = request.getParameter("outtime").concat(":00");
+		String backtime = request.getParameter("backtime").concat(":00");
+		JSONObject jsonObject = this.getPerson(userContext);
+		String photoUrl = jsonObject.getString("photoUrl").concat("&spec=100");
+		jsonObject = this.getOrg(userContext, jsonObject.getString("orgId"));
+		String orgId = jsonObject.getString("orgId");
+		String deptname = jsonObject.getString("name");
 		String phone = request.getParameter("phone");
-		String photoUrl = getPerson(userContext).getString("photoUrl").concat("&spec=100");
 		int updated = 0;
 		outRecord.setUsername(userContext.getUsername());
 		outRecord.setOrgid(orgId);
@@ -222,6 +211,7 @@ public class AppService {
 				updated = outRecordService.updateoutRecord(outRecord);
 			}else {
 				recordId = UUID.randomUUID().toString();
+				outRecord.setState(1);
 				outRecord.setRecordid(recordId);
 				outRecord.setOuttime(outtime);
 				outRecord.setBacktime(backtime);
@@ -238,6 +228,13 @@ public class AppService {
 		return ret;
 	}
 	
+	/**
+	 * 签到
+	 * @param userContext
+	 * @param request
+	 * @return
+	 * @throws Exception
+	 */
 	public JSONObject addClockIn(UserContext userContext, HttpServletRequest request) throws Exception {
 		String position = request.getParameter("position");
 		String recordid = request.getParameter("recordid");
@@ -247,6 +244,7 @@ public class AppService {
 		String clockInId = UUID.randomUUID().toString();
 		ClockIn clockIn = new ClockIn();
 		clockIn.setClockinid(clockInId);
+		clockIn.setState(1);
 		clockIn.setClockintime(clockintime );
 		clockIn.setPosition(position);
 		clockIn.setRecordId(recordid);
@@ -260,16 +258,21 @@ public class AppService {
 		return ret;
 	}
 	
-	
-	public JSONObject selectRecords(String outreason,UserContext userContext) throws Exception {
+	/**
+	 * 查看登记
+	 * @param outreason
+	 * @param userContext
+	 * @return
+	 * @throws Exception
+	 */
+	public JSONObject selectRecords(String outreason, UserContext userContext) throws Exception {
 		gatewayAuth2.checkValid(userContext);
-//		JSONObject jsonObject = this.getPerson(userContext);
-		
-		boolean isDeptInCharge = isDeptInCharge(userContext);
-		String orgId = this.getOrg(userContext).getString("orgId");
+		JSONObject jsonObject = this.getPerson(userContext);
+		jsonObject = this.getOrg(userContext, jsonObject.getString("orgId"));
+		boolean isDeptInCharge = isDeptInCharge(userContext, jsonObject.getJSONArray("inChargers"));
+		String orgId = jsonObject.getString("orgId");
 		String openId = userContext.getOpenid();
-		List<OutRecord> outRecords = new ArrayList<OutRecord>();
-//		outRecords = outRecordService.selectByReason(outreason);
+		List<OutRecord> outRecords = new ArrayList<OutRecord>();;
 		if (isDeptInCharge) {
 			// 传入orgId
 			outRecords = outRecordService.selectByCondition(outreason,orgId);
@@ -277,7 +280,6 @@ public class AppService {
 			// 传入openId
 			outRecords = outRecordService.selectByCondition(outreason,openId);
 		}
-		
 		JSONObject rets = new JSONObject();
 		JSONArray ja=new JSONArray();
 		Iterator<OutRecord> it = outRecords.iterator();
@@ -303,12 +305,11 @@ public class AppService {
 	 * @return
 	 * @throws Exception
 	 */
-	public boolean isDeptInCharge(UserContext userContext) throws Exception {
+	public boolean isDeptInCharge(UserContext userContext, JSONArray jsonArray) throws Exception {
 		boolean isDeptInCharge  = false;
 		List<String> chargeOpenIds = new ArrayList<>();
-		JSONArray jArray = this.getOrg(userContext).getJSONArray("inChargers");
-		for(int i=0;i<jArray.size();i++) {
-			JSONObject joObject = (JSONObject) jArray.getJSONObject(i);
+		for(int i=0; i<jsonArray.size(); i++) {
+			JSONObject joObject = (JSONObject) jsonArray.getJSONObject(i);
 			chargeOpenIds.add(joObject.getString("openId"));
 		}
 		String openId = userContext.getOpenid();
@@ -316,12 +317,18 @@ public class AppService {
 		return isDeptInCharge;
 	}
 	
+	/**
+	 * 查看某条记录详情
+	 * @param userContext
+	 * @param recordid
+	 * @return
+	 * @throws Exception
+	 */
 	public JSONObject selectOneRecord(UserContext userContext,String recordid) throws Exception {
 		List<ClockIn> clockIns = clockInService.selectByOutRecordId(recordid);
 		boolean hasClockIns = !clockIns.isEmpty();
 		JSONObject ret = new JSONObject();
 		OutRecord outRecord = outRecordService.selectByPrimaryKey(recordid,hasClockIns);
-//		int state =  outRecord.getState();//是否是撤回的数据
 		if (outRecord!=null) {
 			ret.put("username", outRecord.getUsername());
 			ret.put("openid", outRecord.getOpenid());
@@ -330,35 +337,13 @@ public class AppService {
 			ret.put("backtime", outRecord.getBacktime());
 			ret.put("outreason", outRecord.getOutreason());
 			ret.put("phone", outRecord.getContact());
-//			ret.put("phone", getErpPerson(userContext, outRecord.getOpenid()).getString("name"));
-			ret.put("deptname", this.getPerson(outRecord.getOpenid(),userContext).getString("department"));
+			ret.put("deptname", outRecord.getDeptname());
 			ret.put("clonkIns", outRecord.getClockIns());
-//			if (state!=0) {
-//			}
 		}
 		return ret;
 	}
 	
-	public JSONObject selectByTime(UserContext userContext,Integer stage) throws Exception {
-		
-		JSONObject ret = new JSONObject();
-		List<OutRecord> outRecords = outRecordService.selectByTime(stage);
-		JSONObject rets = new JSONObject();
-		JSONArray ja=new JSONArray();
-		Iterator<OutRecord> it = outRecords.iterator(); 
-		while(it.hasNext()) {
-			OutRecord outRecord = (OutRecord) it.next();
-			ret.put("recordid", outRecord.getRecordid());
-			ret.put("username", outRecord.getUsername());
-			ret.put("outtime", outRecord.getOuttime());
-			ret.put("backtime", outRecord.getBacktime());
-			ret.put("outreason", outRecord.getOutreason());
-			ja.add(ret);
-		}
-		rets.put("outrecords", ja);
-		return rets;
-	}
-	
+	@Deprecated
 	public void todoAction(UserContext userContext) throws Exception {
 		String scope = "app";
 		gatewayAuth2.checkValid(userContext);
@@ -375,6 +360,7 @@ public class AppService {
         gatewayAuth2.gatewayRequestJson(url, JSONObject.toJSONString(parameters));
 	}
 	
+	@Deprecated
 	public void sendTodo(UserContext userContext) throws Exception {
 		String scope = "app";
 		gatewayAuth2.checkValid(userContext);
@@ -401,6 +387,12 @@ public class AppService {
         gatewayAuth2.gatewayRequestJson(url, JSONObject.toJSONString(parameters));
 	}
 	
+	/**
+	 * 获取用户数据
+	 * @param userContext
+	 * @return
+	 * @throws Exception
+	 */
 	public JSONObject getPerson(UserContext userContext) throws Exception {
 		String scope = "app";
 		gatewayAuth2.checkValid(userContext);
@@ -412,7 +404,13 @@ public class AppService {
 		String ret = gatewayAuth2.gatewayRequest(url, parameters);
 		return JSONObject.parseObject(ret).getJSONArray("data").getJSONObject(0);
 	}
-	
+	/**
+	 * 
+	 * @param openId
+	 * @param userContext
+	 * @return
+	 * @throws Exception
+	 */
 	public JSONObject getPerson(String openId,UserContext userContext) throws Exception {
 		String scope = "app";
 		gatewayAuth2.checkValid(userContext);
@@ -425,13 +423,18 @@ public class AppService {
 		return JSONObject.parseObject(ret).getJSONArray("data").getJSONObject(0);
 	}
 	
+	/**
+	 * 获取ERP数据
+	 * @param userContext
+	 * @return
+	 * @throws Exception
+	 */
 	public JSONObject getErpPerson(UserContext userContext) throws Exception {
 		String scope = "resGroupSecret";
-		
 		List<String> openIds = new ArrayList<String>();
 		openIds.add(userContext.getOpenid());
 		gatewayAuth2.checkValid(userContext);
-		String url = gatewayHost.concat("/openimport/open/person/get?accessToken=").concat(tokenService.getAccessToken(userContext.getAppid(), appSecret, userContext.getEid(), scope));
+		String url = gatewayHost.concat("/openimport/open/person/get?accessToken=").concat(tokenService.getAccessToken(userContext.getAppid(), erpSecret, userContext.getEid(), scope));
 		Map parameters = new HashMap(2); 
 		parameters.put("eid", userContext.getEid());
 		JSONObject jo=new JSONObject();
@@ -447,28 +450,12 @@ public class AppService {
 		return JSONObject.parseObject(ret).getJSONArray("data").getJSONObject(0);
 	}
 	
-	public JSONObject getErpPerson(UserContext userContext, String openid) throws Exception {
-		String scope = "resGroupSecret";
-		List<String> openIds = new ArrayList<String>();
-		openIds.add(userContext.getOpenid());
-		gatewayAuth2.checkValid(userContext);
-//		String url = gatewayHost.concat("/openimport/open/person/get?accessToken=").concat(gatewayAuth2.getAccessToken(userContext.getAppid(), appSecret, userContext.getEid(), scope));
-		String url = gatewayHost.concat("/openimport/open/person/get?accessToken=").concat(tokenService.getAccessToken(userContext.getAppid(), appSecret, userContext.getEid(), scope));
-		Map parameters = new HashMap(2); 
-		parameters.put("eid", userContext.getEid());
-		JSONObject jo=new JSONObject();
-		jo.put("eid", userContext.getEid());
-		jo.put("type", 1);
-		JSONArray ja=new JSONArray();
-		ja.add(openid);
-		jo.put("array", ja);
-		parameters.put("eid", userContext.getEid());
-		parameters.put("nonce", UUID.randomUUID().toString());
-		parameters.put("data", jo.toString());
-		String ret = gatewayAuth2.gatewayRequest(url, parameters);
-		return JSONObject.parseObject(ret).getJSONArray("data").getJSONObject(0);
-	}
-	
+	/**
+	 * 
+	 * @param userContext
+	 * @return
+	 * @throws Exception
+	 */
 	public JSONObject getOrgPersons(UserContext userContext) throws Exception {
 		String scope = "app";
 		gatewayAuth2.checkValid(userContext);
@@ -502,14 +489,18 @@ public class AppService {
 		return JSONObject.parseObject(ret).getJSONArray("data");
 	}
 	
-	public JSONObject getOrg(UserContext userContext) throws Exception {
+	/**
+	 * 
+	 * @param userContext
+	 * @return
+	 * @throws Exception
+	 */
+	public JSONObject getOrg(UserContext userContext, String orgId) throws Exception {
 		String scope = "app";
 		gatewayAuth2.checkValid(userContext);
-		JSONObject jsonObject = this.getPerson(userContext);
-//		String url = gatewayHost.concat("/opendata-control/data/getorg?accessToken=").concat(gatewayAuth2.getAccessToken(userContext.getAppid(), appSecret, null, scope));
 		String url = gatewayHost.concat("/opendata-control/data/getorg?accessToken=").concat(tokenService.getAccessToken(userContext.getAppid(), appSecret, null, scope));
-		if(StringUtils.isEmpty(jsonObject.getString("orgId"))) throw new RuntimeException("该员工要先移动到部门^^");
-		Map parameters = new HashMap(2); parameters.put("orgId", jsonObject.getString("orgId"));
+		if(StringUtils.isEmpty(orgId)) throw new RuntimeException("该员工要先移动到部门^^");
+		Map parameters = new HashMap(2); parameters.put("orgId", orgId);
 		parameters.put("eid", userContext.getEid());
 		String ret = gatewayAuth2.gatewayRequest(url, parameters);
 		return JSONObject.parseObject(ret).getJSONObject("data");

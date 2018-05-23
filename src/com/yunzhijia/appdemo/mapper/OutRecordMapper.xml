@@ -25,68 +25,58 @@
 
 	</resultMap>
 	<sql id="Base_Column_List">
-		recordId, userName,contact, DATE_FORMAT(outTime,'%Y-%m-%d %H:%i:%s') AS outTime , DATE_FORMAT(backTime,'%Y-%m-%d %H:%i:%s') AS backTime, outReason, deptName,
+		<!-- mysql -->
+		<!-- recordId, userName,contact, DATE_FORMAT(outTime,'%Y-%m-%d %H:%i:%s') 
+			AS outTime , DATE_FORMAT(backTime,'%Y-%m-%d %H:%i:%s') AS backTime, outReason, 
+			deptName, state, orgId, openId, stage,photoUrl -->
+		<!-- h2 -->
+		recordId, userName,contact, outTime AS outTime ,backTime AS backTime,
+		outReason, deptName,
 		state, orgId, openId, stage,photoUrl
 	</sql>
-<!-- 	<sql id="Base_Column_List">
-		recordId, userName, outTime, backTime, outReason, deptName,
-		state, orgId, openId, stage,photoUrl
-	</sql> -->
 
-	<select id="selectByTime" resultMap="BaseResultMap"
-		parameterType="java.lang.String" useCache="true">
-		select
-		<include refid="Base_Column_List" />
-		from t_outrecord
-		where 1 = 1
-		<!-- <if test = ''> and DATE_FORMAT(CURDATE(),"%Y-%m") = #{DATE_FORMAT({outTime},"%Y-%m")} 
-			</if> -->
-		<if test='stage == 0'>
-			<!-- and DATE_FORMAT(outTime, '%Y-%m') = #{DATE_FORMAT(CURDATE() , '%Y-%m')} -->
-			and  DATE_FORMAT(outtime,"%Y-%m") = DATE_FORMAT(CURDATE(),"%Y-%m")
-			
-		</if>
-		
-		<if test='stage == 1'>
-			and  DATE_FORMAT(outtime,"%Y-%m") = DATE_FORMAT(CURDATE(),"%Y-%m")
-			
-		</if>
-		
-		<if test='stage == 2'>
-			and  PERIOD_DIFF(DATE_FORMAT( now(),'%Y%m') , DATE_FORMAT(outtime, '%Y%m')) =1
-			
-		</if>
-		
-		<if test='stage == 3'>
-			and  outTime between date_sub(now(),interval 3 month) and now()
-		</if>
-		ORDER BY outTime DESC
-	</select>
-	
 	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
 		parameterType="java.lang.String" useCache="true">
 		<!-- 有签到记录 -->
 		<if test="condition!=false">
-			SELECT r.recordId, r.orgId, r.userName,r.contact, r.photoUrl, r.deptName , r.openId, DATE_FORMAT(r.outTime,'%Y-%m-%d %H:%i:%s') AS outTime,
-			DATE_FORMAT(r.backTime,'%Y-%m-%d %H:%i:%s') AS backTime, r.outReason, c.clockInId, DATE_FORMAT(c.clockInTime,'%Y-%m-%d %H:%i:%s') AS clockInTime, c.position
-			FROM
-			`t_outrecord` r,t_clockin c
+
+			<!-- mysql -->
+			<!-- SELECT r.recordId, r.orgId, r.userName,r.contact, r.photoUrl, r.deptName 
+				, r.openId, DATE_FORMAT(r.outTime,'%Y-%m-%d %H:%i:%s') AS outTime, DATE_FORMAT(r.backTime,'%Y-%m-%d 
+				%H:%i:%s') AS backTime, r.outReason, c.clockInId, DATE_FORMAT(c.clockInTime,'%Y-%m-%d 
+				%H:%i:%s') AS clockInTime, c.position -->
+
+			<!-- h2 -->
+			SELECT r.recordId, r.orgId, r.userName,r.contact, r.photoUrl,
+			r.deptName , r.openId, r.outTime AS outTime,
+			r.backTime AS backTime ,
+			r.outReason, c.clockInId, c.clockInTime AS clockInTime, c.position
+			FROM `t_outrecord` r,t_clockin c
 			where 1=1
 			and r.recordId = c.record_id
 			and recordId = #{recordid,jdbcType=VARCHAR}
-			ORDER BY c.clockInTime DESC
+			ORDER BY c.clockInTime
+			DESC
 		</if>
+		
 		<!-- 无签到记录 -->
 		<if test="condition!=true">
-			SELECT r.recordId, r.orgId, r.userName, r.contact, r.photoUrl,r.deptName, r.openId, DATE_FORMAT(r.outTime,'%Y-%m-%d %H:%i:%s') AS outTime,
-			DATE_FORMAT(r.backTime,'%Y-%m-%d %H:%i:%s') AS backTime, r.outReason
+
+			<!-- mysql -->
+			<!-- SELECT r.recordId, r.orgId, r.userName, r.contact, r.photoUrl,r.deptName, 
+				r.openId, DATE_FORMAT(r.outTime,'%Y-%m-%d %H:%i:%s') AS outTime, DATE_FORMAT(r.backTime,'%Y-%m-%d 
+				%H:%i:%s') AS backTime, r.outReason -->
+
+			<!-- h2 -->
+			SELECT r.recordId, r.orgId, r.userName, r.contact,
+			r.photoUrl,r.deptName, r.openId, r.outTime AS outTime,
+			r.backTime AS
+			backTime, r.outReason
 			FROM `t_outrecord` r
 			where 1=1
-			and recordId = #{recordid,jdbcType=VARCHAR}
+			and recordId =
+			#{recordid,jdbcType=VARCHAR}
 		</if>
-		
-		
-
 	</select>
 
 	<select id="selectByReason" resultMap="BaseResultMap"
@@ -94,13 +84,14 @@
 		select
 		<include refid="Base_Column_List" />
 		from t_outrecord
-		where outReason like CONCAT(CONCAT('%', #{outreason}), '%') 
+		where outReason like CONCAT(CONCAT('%', #{outreason}),
+		'%')
 		or userName like CONCAT(CONCAT('%', #{username}), '%')
 		<!-- and orgId = #{orgid,jdbcType=VARCHAR} -->
 		<!-- and state ='1' -->
 		ORDER BY outTime DESC
 	</select>
-	
+
 	<select id="selectByCondition" resultMap="BaseResultMap"
 		parameterType="java.lang.String" useCache="true">
 		select
@@ -108,95 +99,138 @@
 		from t_outrecord
 		where 1=1
 		<if test="condition.length()==36">
-		and orgId = #{condition,jdbcType=VARCHAR}
+			and orgId = #{condition,jdbcType=VARCHAR}
 		</if>
 		<if test="condition.length()==24">
-		and openId = #{condition,jdbcType=VARCHAR}
+			and openId = #{condition,jdbcType=VARCHAR}
 		</if>
-		and (outReason like CONCAT(CONCAT('%', #{outreason}), '%') 
-		or userName like CONCAT(CONCAT('%', #{outreason}), '%'))
-		ORDER BY state ASC, outTime DESC
+		and (outReason like CONCAT(CONCAT('%', #{outreason}), '%')
+		or userName
+		like CONCAT(CONCAT('%', #{outreason}), '%'))
+		ORDER BY state
+		ASC, outTime
+		DESC
 	</select>
 
-	<select id="listOutRecords" resultMap="BaseResultMap " parameterType="java.lang.String" useCache="true">
-		select <include refid="Base_Column_List" /> from t_outrecord
+	<select id="listOutRecords" resultMap="BaseResultMap"
+		parameterType="java.lang.String" useCache="true">
+		select
+		<include refid="Base_Column_List" />
+		from t_outrecord
 		where openId = #{openid,jdbcType=VARCHAR}
-		<!-- and state ='1'  -->
 		
 		<if test='stage == 0'>
-			<!-- and DATE_FORMAT(outTime, '%Y-%m') = #{DATE_FORMAT(CURDATE() , '%Y-%m')} -->
-			<!-- and  DATE_FORMAT(outtime,"%Y-%m") = DATE_FORMAT(CURDATE(),"%Y-%m") -->
-			
 		</if>
-		
+
 		<if test='stage == 1'>
-			and  DATE_FORMAT(outtime,"%Y-%m") = DATE_FORMAT(CURDATE(),"%Y-%m")
-			
+			<!-- mysql -->
+			<!-- and DATE_FORMAT(outtime,"%Y-%m") = DATE_FORMAT(CURDATE(),"%Y-%m") -->
+
+			<!-- h2 -->
+			and DateDiff(m, outtime, GETDATE())=0
+
 		</if>
-		
+
 		<if test='stage == 2'>
-			and  PERIOD_DIFF(DATE_FORMAT( now(),'%Y%m') , DATE_FORMAT(outtime, '%Y%m')) =1
-			
+			<!-- mysql -->
+			<!-- and PERIOD_DIFF(DATE_FORMAT( now(),'%Y%m') , DATE_FORMAT(outtime, 
+				'%Y%m')) =1 -->
+
+			<!-- h2 -->
+			<![CDATA[and DateDiff(m, outtime, GETDATE()) =1]]>
 		</if>
-		
+
 		<if test='stage == 3'>
-			and  outTime between date_sub(now(),interval 3 month) and now()
+			<!-- mysql -->
+			<!-- and outTime between date_sub(now(),interval 3 month) and now() -->
+			
+			<!-- h2 -->
+			<![CDATA[and DateDiff(m, outtime, GETDATE()) <=2]]>
 		</if>
-		
+
 		ORDER BY state ASC, outTime DESC
-		
+
 	</select>
-	
-	<select id="listOutRecrdsAll" resultMap="BaseResultMap " useCache="true">
-		select recordId, openId, userName, contact, outTime, backTime, outReason,
+
+	<select id="listOutRecrdsAll" resultMap="BaseResultMap "
+		useCache="true">
+		select recordId, openId, userName, contact, outTime, backTime,
+		outReason,
 		orgId, deptName from t_outrecord
 		<!-- where state ='1' -->
 		ORDER BY state ASC, outTime DESC
 	</select>
-	
-	<select id="listOutRecordsAdmin" resultMap="BaseResultMap " parameterType="java.lang.String" useCache="true">
-		select <include refid="Base_Column_List" /> from t_outrecord
+
+	<select id="listOutRecordsAdmin" resultMap="BaseResultMap "
+		parameterType="java.lang.String" useCache="true">
+		select
+		<include refid="Base_Column_List" />
+		from t_outrecord
 		where 1=1
-		and orgId = #{orgid,jdbcType=VARCHAR} and openId != #{openid,jdbcType=VARCHAR}
-		
+		and orgId = #{orgid,jdbcType=VARCHAR} and
+		openId != #{openid,jdbcType=VARCHAR}
+
 		<if test='stage == 0'>
-			<!-- and DATE_FORMAT(outTime, '%Y-%m') = #{DATE_FORMAT(CURDATE() , '%Y-%m')} -->
-			<!-- and  DATE_FORMAT(outtime,"%Y-%m") = DATE_FORMAT(CURDATE(),"%Y-%m") -->
 		</if>
-		
+
 		<if test='stage == 1'>
-			and  DATE_FORMAT(outtime,"%Y-%m") = DATE_FORMAT(CURDATE(),"%Y-%m")
-			
+
+			<!-- mysql -->
+			<!-- and DATE_FORMAT(outtime,"%Y-%m") = DATE_FORMAT(CURDATE(),"%Y-%m") -->
+
+			<!-- h2 -->
+			and DateDiff(m, outtime, getdate())=0
+
 		</if>
-		
+
 		<if test='stage == 2'>
-			and  PERIOD_DIFF(DATE_FORMAT( now(),'%Y%m') , DATE_FORMAT(outtime, '%Y%m')) =1
-			
+			<!-- mysql -->
+			<!-- and PERIOD_DIFF(DATE_FORMAT( now(),'%Y%m') , DATE_FORMAT(outtime, 
+				'%Y%m')) =1 -->
+
+			<!-- h2 -->
+			<![CDATA[and DateDiff(m, outtime, GETDATE()) =1]]>
+
 		</if>
-		
+
 		<if test='stage == 3'>
-			and  outTime between date_sub(now(),interval 3 month) and now()
+
+			<!-- mysql -->
+			<!-- and outTime between date_sub(now(),interval 3 month) and now() -->
+
+			<!-- h2 -->
+			<![CDATA[and DateDiff(m, outtime, GETDATE()) <=2]]>
+
 		</if>
-		
+
 		ORDER BY state ASC, outTime DESC
 	</select>
 
-	<delete id="deleteByPrimaryKey" parameterType="java.lang.String" flushCache="true">
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.String"
+		flushCache="true">
 		delete from t_outrecord
-		where recordId = #{recordid,jdbcType=VARCHAR}
-		ORDER BY outTime DESC
+		where recordId =
+		#{recordid,jdbcType=VARCHAR}
 	</delete>
-	<insert id="insert" parameterType="com.yunzhijia.appdemo.pojo.OutRecord" flushCache="true">
-		insert into t_outrecord (recordId, openId, userName,contact, outTime,
-		backTime, outReason, deptName,photoUrl, orgId,
+	<insert id="insert" parameterType="com.yunzhijia.appdemo.pojo.OutRecord"
+		flushCache="true">
+		insert into t_outrecord (recordId, openId,
+		userName,contact, outTime,
+		backTime, outReason, deptName,photoUrl,
+		orgId,
 		state)
-		values (#{recordid,jdbcType=VARCHAR}, #{openid,jdbcType=VARCHAR},
-		#{username,jdbcType=VARCHAR},#{contact,jdbcType=VARCHAR}, #{outtime,jdbcType=TIMESTAMP},
-		#{backtime,jdbcType=TIMESTAMP}, #{outreason,jdbcType=VARCHAR},
-		#{deptname,jdbcType=VARCHAR},#{photourl,jdbcType=VARCHAR}, #{orgid,jdbcType=VARCHAR},
+		values (#{recordid,jdbcType=VARCHAR},
+		#{openid,jdbcType=VARCHAR},
+		#{username,jdbcType=VARCHAR},#{contact,jdbcType=VARCHAR},
+		#{outtime,jdbcType=TIMESTAMP},
+		#{backtime,jdbcType=TIMESTAMP},
+		#{outreason,jdbcType=VARCHAR},
+		#{deptname,jdbcType=VARCHAR},#{photourl,jdbcType=VARCHAR},
+		#{orgid,jdbcType=VARCHAR},
 		#{state,jdbcType=INTEGER})
 	</insert>
-	<insert id="insertSelective" parameterType="com.yunzhijia.appdemo.pojo.OutRecord" flushCache="true">
+	<insert id="insertSelective" parameterType="com.yunzhijia.appdemo.pojo.OutRecord"
+		flushCache="true">
 		insert into t_outrecord
 		<trim prefix="(" suffix=")" suffixOverrides=",">
 			<if test="recordid != null">
@@ -269,7 +303,8 @@
 			</if>
 		</trim>
 	</insert>
-	<update id="updateByPrimaryKeySelective" parameterType="com.yunzhijia.appdemo.pojo.OutRecord" flushCache="true">
+	<update id="updateByPrimaryKeySelective" parameterType="com.yunzhijia.appdemo.pojo.OutRecord"
+		flushCache="true">
 		update t_outrecord
 		<set>
 			<if test="openid != null">
@@ -297,7 +332,7 @@
 				photoUrl = #{photourl,jdbcType=VARCHAR},
 			</if>
 			<if test="orgid != null">
-				deptName = #{orgid,jdbcType=VARCHAR},
+				orgId = #{orgid,jdbcType=VARCHAR},
 			</if>
 			<if test="state != null">
 				state = #{state,jdbcType=INTEGER},
@@ -305,19 +340,26 @@
 		</set>
 		where recordId = #{recordid,jdbcType=VARCHAR}
 	</update>
-	<update id="updateByPrimaryKey" parameterType="com.yunzhijia.appdemo.pojo.OutRecord" flushCache="true">
+	<update id="updateByPrimaryKey" parameterType="com.yunzhijia.appdemo.pojo.OutRecord"
+		flushCache="true">
 		update t_outrecord
-		set userName = #{username,jdbcType=VARCHAR},
+		set userName =
+		#{username,jdbcType=VARCHAR},
 		contact = #{contact,jdbcType=VARCHAR},
 		openId = #{openid,jdbcType=VARCHAR},
-		outTime = #{outtime,jdbcType=TIMESTAMP},
-		backTime = #{backtime,jdbcType=TIMESTAMP},
-		outReason = #{outreason,jdbcType=VARCHAR},
+		outTime =
+		#{outtime,jdbcType=TIMESTAMP},
+		backTime =
+		#{backtime,jdbcType=TIMESTAMP},
+		outReason =
+		#{outreason,jdbcType=VARCHAR},
 		deptName = #{deptname,jdbcType=VARCHAR},
 		photoUrl = #{photourl,jdbcType=VARCHAR},
-		orgid = #{orgid,jdbcType=VARCHAR},
+		orgid =
+		#{orgid,jdbcType=VARCHAR},
 		state = #{state,jdbcType=INTEGER}
-		where recordId = #{recordid,jdbcType=VARCHAR}
+		where
+		recordId = #{recordid,jdbcType=VARCHAR}
 	</update>
 
 </mapper>

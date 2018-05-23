@@ -23,14 +23,14 @@ public interface OutRecordService {
 	List<OutRecord> listOutRecrdsAll();
 	/**
 	 * 获取用户登记记录
-	 * @param openid
-	 * @param stage
+	 * @param openid 
+	 * @param stage 
 	 * @return
 	 */
 	List<OutRecord> listOutRecrds(String openid,Integer stage);
 	/**
 	 * 部门负责获取登记记录
-	 * @param orgid
+	 * @param orgid 
 	 * @param stage
 	 * @param openid
 	 * @return
@@ -44,14 +44,13 @@ public interface OutRecordService {
 	 */
 	List<OutRecord> selectByReason(String outreason);
 	
-	
-	List<OutRecord> selectByCondition(String outreason,String condition);
 	/**
 	 * 
-	 * @param stage
+	 * @param outreason
+	 * @param condition
 	 * @return
 	 */
-	List<OutRecord> selectByTime(Integer stage);
+	List<OutRecord> selectByCondition(String outreason,String condition);
 	/**
 	 * 
 	 * @param recordid

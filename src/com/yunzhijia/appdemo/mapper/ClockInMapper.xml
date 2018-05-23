@@ -9,7 +9,10 @@
 		<result column="record_id" property="recordId" jdbcType="VARCHAR" />
 	</resultMap>
 	<sql id="Base_Column_List">
-		clockInId, position, DATE_FORMAT(clockInTime,'%Y-%m-%d %H:%i:%s') AS clockInTime, state, record_id
+		<!-- clockInId, position, DATE_FORMAT(clockInTime,'%Y-%m-%d %H:%i:%s') 
+			AS clockInTime, state, record_id -->
+		<!-- H2 DB -->
+		clockInId, position, clockInTime AS clockInTime, state, record_id
 	</sql>
 	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
 		parameterType="java.lang.String" useCache="true">
@@ -25,18 +28,23 @@
 		from t_clockin
 		where record_id = #{recordId,jdbcType=VARCHAR}
 	</select>
-	<delete id="deleteByPrimaryKey" parameterType="java.lang.String" flushCache="true">
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.String"
+		flushCache="true">
 		delete from t_clockin
-		where clockInId = #{clockinid,jdbcType=VARCHAR}
+		where clockInId =
+		#{clockinid,jdbcType=VARCHAR}
 	</delete>
-	<insert id="insert" parameterType="com.yunzhijia.appdemo.pojo.ClockIn" flushCache="true">
+	<insert id="insert" parameterType="com.yunzhijia.appdemo.pojo.ClockIn"
+		flushCache="true">
 		insert into t_clockin (clockInId, position, clockInTime,
 		state, record_id)
-		values (#{clockinid,jdbcType=VARCHAR}, #{position,jdbcType=VARCHAR},
+		values (#{clockinid,jdbcType=VARCHAR},
+		#{position,jdbcType=VARCHAR},
 		#{clockintime,jdbcType=TIMESTAMP},
 		#{state,jdbcType=INTEGER}, #{recordId,jdbcType=VARCHAR})
 	</insert>
-	<insert id="insertSelective" parameterType="com.yunzhijia.appdemo.pojo.ClockIn" flushCache="true">
+	<insert id="insertSelective" parameterType="com.yunzhijia.appdemo.pojo.ClockIn"
+		flushCache="true">
 		insert into t_clockin
 		<trim prefix="(" suffix=")" suffixOverrides=",">
 			<if test="clockinid != null">
@@ -73,7 +81,8 @@
 			</if>
 		</trim>
 	</insert>
-	<update id="updateByPrimaryKeySelective" parameterType="com.yunzhijia.appdemo.pojo.ClockIn" flushCache="true">
+	<update id="updateByPrimaryKeySelective" parameterType="com.yunzhijia.appdemo.pojo.ClockIn"
+		flushCache="true">
 		update t_clockin
 		<set>
 			<if test="position != null">
@@ -91,12 +100,16 @@
 		</set>
 		where clockInId = #{clockinid,jdbcType=VARCHAR}
 	</update>
-	<update id="updateByPrimaryKey" parameterType="com.yunzhijia.appdemo.pojo.ClockIn" flushCache="true">
+	<update id="updateByPrimaryKey" parameterType="com.yunzhijia.appdemo.pojo.ClockIn"
+		flushCache="true">
 		update t_clockin
-		set position = #{position,jdbcType=VARCHAR},
-		clockInTime = #{clockintime,jdbcType=TIMESTAMP},
+		set position =
+		#{position,jdbcType=VARCHAR},
+		clockInTime =
+		#{clockintime,jdbcType=TIMESTAMP},
 		state = #{state,jdbcType=INTEGER},
 		record_id = #{recordId,jdbcType=VARCHAR}
-		where clockInId = #{clockinid,jdbcType=VARCHAR}
+		where clockInId =
+		#{clockinid,jdbcType=VARCHAR}
 	</update>
 </mapper>

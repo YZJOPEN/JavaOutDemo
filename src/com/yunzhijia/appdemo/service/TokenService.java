@@ -3,17 +3,15 @@ package com.yunzhijia.appdemo.service;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.yunzhijia.appdemo.auth.GatewayAuth2;
 import com.yunzhijia.appdemo.dao.TokenDao;
-import com.yunzhijia.appdemo.util.JsonUtil;
 import com.yunzhijia.appdemo.vo.TokenBean;
 
 /**
@@ -22,14 +20,11 @@ import com.yunzhijia.appdemo.vo.TokenBean;
  */
 @Service
 public class TokenService {
-	
 	private Logger logger = LoggerFactory.getLogger(TokenService.class);
-	private static final String APPLICATION_JSON = "application/json";
-	private static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
-	private static final int timeoutMillis = 3000;
 	@Value("${APP.SECRET}")
 	private String appSecret;
 	
+	// 通讯录同步秘钥，正式环境请更改为所在圈秘钥
 	@Value("${APP.ERPSECRET}")
 	private String erpSecret;
 	
@@ -70,18 +65,16 @@ public class TokenService {
     	}
     	parm.put("secret", secret);
     	String url = gatewayHost.concat("/oauth2/token/getAccessToken");
-		
-		logger.debug("获取access_token请求地址: {}", url);
-		String result = null;
+		JSONObject result = null;
 		try {
-			result = JSONObject.parseObject(GatewayAuth2.gatewayRequestJson(url, JSONObject.toJSONString(parm))).getJSONObject("data").toJSONString();
+			result = JSONObject.parseObject(GatewayAuth2.gatewayRequestJson(url, JSONObject.toJSONString(parm))).getJSONObject("data");
 		} catch (Exception e) {
 			e.printStackTrace();
 			logger.error("获取access_token信息失败!, 返回null");
 		}
 		
 		logger.debug("获取access_token返回数据: {}", result);
-		tokenBean = JsonUtil.toObject(result, TokenBean.class);
+		tokenBean = JSON.toJavaObject(result, TokenBean.class);
 		if (tokenBean!=null && tokenBean.getAccessToken()!=null) {
 			tokenBean.setUpdateTime(new Date());
 			tokenBean.setScope(scope);
@@ -92,5 +85,4 @@ public class TokenService {
 		logger.error("获取access_token信息失败!, 返回null");
 		return null;
 	}
-	
 }

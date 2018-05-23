@@ -20,8 +20,6 @@ public interface OutRecordMapper {
     
     List<OutRecord> selectByCondition(@Param("outreason")String outreason,@Param("condition")String condtion);
     
-    List<OutRecord> selectByTime(@Param("stage")Integer stage);
-
     int updateByPrimaryKeySelective(OutRecord record);
 
     int updateByPrimaryKey(OutRecord record);

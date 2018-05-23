@@ -1,3 +1,15 @@
+/**
+* 版权所有：深圳云之家网络科技有限公司
+* Copyright 2017 yunzhijia.com Inc.
+* All right reserved. 
+*====================================================
+* 文件名称: GatewayAuth2.java
+* 修订记录：
+* No    日期				作者(操作:具体内容)
+* 1.    Dec 21, 2017	wangzy(创建:创建文件)
+*====================================================
+* 类描述：获取用户上下文信息
+*/
 package com.yunzhijia.appdemo.interceptor;
 
 import javax.servlet.http.HttpServletRequest;

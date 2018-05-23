@@ -8,7 +8,7 @@ import com.yunzhijia.appdemo.vo.TokenBean;
  * 单应用获取token可临时将token存储在内存
  * 如果多应用同时获取token会出现抢占失效问题
  * 可存储于共享缓存或数据库中
- * @author
+ * @author Administrator
  */
 @Repository
 public class TokenDao {

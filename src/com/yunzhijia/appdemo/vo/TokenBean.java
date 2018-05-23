@@ -2,13 +2,13 @@ package com.yunzhijia.appdemo.vo;
 
 import java.util.Date;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
+/**
+ * accessToken bean
+ * @author Administrator
+ *
+ */
 public class TokenBean {
-	
-	@JsonProperty("accessToken")
 	private String accessToken;
-	@JsonProperty("expireIn")
 	private int expireIn;
 	private Date updateTime; // 更新时间
 	private String scope;  //授权级别
@@ -40,5 +40,4 @@ public class TokenBean {
 	public void setScope(String scope) {
 		this.scope = scope;
 	}
-	
 }
