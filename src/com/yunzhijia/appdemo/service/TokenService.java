@@ -3,11 +3,14 @@ package com.yunzhijia.appdemo.service;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.yunzhijia.appdemo.auth.GatewayAuth2;
@@ -43,7 +46,7 @@ public class TokenService {
 	public String getAccessToken(String appId, String secret, String eid, String scope) {
 		TokenBean tokenBean = tokenDao.getToken();
 		// 判断当前token是否在有效期内
-		if (tokenBean!=null && tokenBean.getAccessToken()!=null && scope.equals(tokenBean.getScope())) { 
+		if (tokenBean != null && tokenBean.getAccessToken() != null && scope.equals(tokenBean.getScope()) && StringUtils.isNotBlank(eid) && eid.equals(tokenBean.getEid())) { 
 			if((System.currentTimeMillis()-tokenBean.getUpdateTime().getTime())/1000 < (tokenBean.getExpireIn()-300)){
 				logger.debug("返回有效期内的access_token: {}", tokenBean.getAccessToken());
 				return tokenBean.getAccessToken();
@@ -75,9 +78,10 @@ public class TokenService {
 		
 		logger.debug("获取access_token返回数据: {}", result);
 		tokenBean = JSON.toJavaObject(result, TokenBean.class);
-		if (tokenBean!=null && tokenBean.getAccessToken()!=null) {
+		if(tokenBean!=null && tokenBean.getAccessToken()!=null) {
 			tokenBean.setUpdateTime(new Date());
 			tokenBean.setScope(scope);
+			tokenBean.setEid(eid);
 			tokenDao.setToken(tokenBean); // 缓存获取的token信息
 			logger.debug("返回新获取的access_token: {}", tokenBean.getAccessToken());
 			return tokenBean.getAccessToken();

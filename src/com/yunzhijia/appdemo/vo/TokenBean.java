@@ -12,8 +12,7 @@ public class TokenBean {
 	private int expireIn;
 	private Date updateTime; // 更新时间
 	private String scope;  //授权级别
-	
-	
+	private String eid;
 	
 	public String getAccessToken() {
 		return accessToken;
@@ -39,5 +38,11 @@ public class TokenBean {
 	}
 	public void setScope(String scope) {
 		this.scope = scope;
+	}
+	public String getEid() {
+		return eid;
+	}
+	public void setEid(String eid) {
+		this.eid = eid;
 	}
 }
