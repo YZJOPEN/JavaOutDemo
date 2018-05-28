@@ -45,7 +45,10 @@ var util = {//工具
         if(date.setHours(0,0,0,0) == today.setHours(0,0,0,0) + oneDay){
             return 1
         }                                
-    }
+    },
+    isYzjApp:function () {
+        return navigator.userAgent.match(/Qing\/.*;(iOS|iPhone|Android).*/)?true:false;
+      }
 };
 //提示信息
 (function () {
