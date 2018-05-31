@@ -76,6 +76,7 @@ public class GatewayAuth2 {
      * @return
      * @throws Exception
      */
+    @Deprecated
     public String getAccessToken(String appId, String secret, String eid, String scope) throws Exception {
     	//String nonceStr = Long.toString(Long.valueOf(String.valueOf(Math.random()).substring(2)), 36), 
     			//timestamp = String.valueOf(System.currentTimeMillis());
