@@ -118,7 +118,6 @@
 		<include refid="Base_Column_List" />
 		from t_outrecord
 		where openId = #{openid,jdbcType=VARCHAR}
-		
 		<if test='stage == 0'>
 		</if>
 

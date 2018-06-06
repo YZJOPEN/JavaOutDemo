@@ -11,7 +11,11 @@ var util = {//工具
             }, {})
     },
     setLocalData: function (key, data) {
-        localStorage.setItem(key, JSON.stringify(data));
+    	try{
+            localStorage.setItem(key, JSON.stringify(data));
+        } catch (e) {
+            alert('写入缓存失败！')
+        }
     },
     getLocalData(key) {
         var dataStr = localStorage.getItem(key);

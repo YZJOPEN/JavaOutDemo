@@ -17,10 +17,6 @@ import java.util.Map;
 
 public class BaseController {
 	
-	public BaseController() {
-		System.out.println("This is BaseController");
-	}
-	
 	public Map<String, Object> initMessage(){
 		Map<String, Object> map = new LinkedHashMap<String, Object>();
 		map.put("success", true);
