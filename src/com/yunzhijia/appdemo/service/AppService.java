@@ -87,7 +87,7 @@ public class AppService {
 		gatewayAuth2.checkValid(userContext);
 		String stage = request.getParameter("stage");
 		String choice = request.getParameter("choice"); // 区分我的（1）团队（0）
-		Integer stageTime = stage!=null ? Integer.parseInt(stage) : 0;
+		Integer stageTime = stage!=null ? Integer.parseInt(stage) : 0;//时间
 		List<OutRecord> outRecords = new ArrayList<OutRecord>();
 		JSONObject jsonObject = this.getPerson(userContext);
 		jsonObject = this.getOrg(userContext, jsonObject.getString("orgId"));

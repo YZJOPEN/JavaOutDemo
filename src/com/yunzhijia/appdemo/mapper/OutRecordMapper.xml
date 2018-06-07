@@ -168,6 +168,7 @@
 		where 1=1
 		and orgId = #{orgid,jdbcType=VARCHAR} and
 		openId != #{openid,jdbcType=VARCHAR}
+		and state != 0
 
 		<if test='stage == 0'>
 		</if>
