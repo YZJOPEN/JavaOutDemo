@@ -1,89 +1,95 @@
-var util = {//工具
-    getQuery: function () {
+'use strict';
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var util = { //工具
+    getQuery: function getQuery() {
         var search = window.location.search;
-        return search.substr(1)
-            .split('&')
-            .filter(item => item.length > 0)
-            .map(item => item.split('='))
-            .reduce((obj, item) => {
-                obj[item[0]] = item[1]
-                return obj
-            }, {})
+        return search.substr(1).split('&').filter(function (item) {
+            return item.length > 0;
+        }).map(function (item) {
+            return item.split('=');
+        }).reduce(function (obj, item) {
+            obj[item[0]] = item[1];
+            return obj;
+        }, {});
     },
-    setLocalData: function (key, data) {
-    	try{
+    setLocalData: function setLocalData(key, data) {
+        try {
             localStorage.setItem(key, JSON.stringify(data));
         } catch (e) {
-            alert('写入缓存失败！')
+            alert('写入缓存失败！');
         }
     },
-    getLocalData(key) {
+    getLocalData: function getLocalData(key) {
         var dataStr = localStorage.getItem(key);
         if (dataStr) {
             return JSON.parse(dataStr);
         }
         return null;
     },
-    dateFormat: function (date) {//时间格式化        
-        typeof date == 'object' || (date = this.stringToTimestamp(date));  
+
+    dateFormat: function dateFormat(date) {
+        //时间格式化        
+        (typeof date === 'undefined' ? 'undefined' : _typeof(date)) == 'object' || (date = this.stringToTimestamp(date));
         return date.getFullYear() + "-" + this.repairZero(date.getMonth() + 1) + "-" + this.repairZero(date.getDate()) + " " + this.repairZero(date.getHours()) + ":" + this.repairZero(date.getMinutes());
     },
-    repairZero:function(num) {
+    repairZero: function repairZero(num) {
         if (num < 10) {
             num = "0" + num;
         }
         return num;
     },
-    stringToTimestamp:function(dataString){           
-         return (new Date(dataString.replace(/-/g, "/")))
+    stringToTimestamp: function stringToTimestamp(dataString) {
+        return new Date(dataString.replace(/-/g, "/"));
     },
-    whichDay:function(date){
+    whichDay: function whichDay(date) {
         var today = new Date();
-        var oneDay = 24*60*60*1000 
-        if(date.setHours(0,0,0,0) == today.setHours(0,0,0,0)){
+        var oneDay = 24 * 60 * 60 * 1000;
+        if (date.setHours(0, 0, 0, 0) == today.setHours(0, 0, 0, 0)) {
             return 0;
-        } 
-        if(date.setHours(0,0,0,0) == today.setHours(0,0,0,0) - oneDay){
+        }
+        if (date.setHours(0, 0, 0, 0) == today.setHours(0, 0, 0, 0) - oneDay) {
             return -1;
         }
-        if(date.setHours(0,0,0,0) == today.setHours(0,0,0,0) + oneDay){
-            return 1
-        }                                
+        if (date.setHours(0, 0, 0, 0) == today.setHours(0, 0, 0, 0) + oneDay) {
+            return 1;
+        }
     },
-    isYzjApp:function () {
-        return navigator.userAgent.match(/Qing\/.*;(iOS|iPhone|Android).*/)?true:false;
-      }
+    isYzjApp: function isYzjApp() {
+        return navigator.userAgent.match(/Qing\/.*;(iOS|iPhone|Android).*/) ? true : false;
+    }
 };
 //提示信息
 (function () {
     var ToastConstructor = Vue.extend({
         template: '<transition name="fade"><div class="toast" v-show="visible" :class="{success : success}"><span class="toast-text">{{ success ? "操作成功" : message }}</span></div></transition>',
-        data: function () {
+        data: function data() {
             return {
                 visible: false,
                 message: '',
                 success: false
-            }
+            };
         }
     });
     var toastPool = [];
 
-    var getAnInstance = () => {
+    var getAnInstance = function getAnInstance() {
         if (toastPool.length > 0) {
             var instance = toastPool[0];
             toastPool.splice(0, 1);
             return instance;
         }
-        return (new ToastConstructor()).$mount(document.createElement('div'));
+        return new ToastConstructor().$mount(document.createElement('div'));
     };
 
-    var returnAnInstance = function (instance) {
+    var returnAnInstance = function returnAnInstance(instance) {
         if (instance) {
             toastPool.push(instance);
         }
     };
 
-    var removeDom = function (event) {
+    var removeDom = function removeDom(event) {
         if (event.target.parentNode) {
             event.target.parentNode.removeChild(event.target);
         }
@@ -96,7 +102,7 @@ var util = {//工具
         returnAnInstance(this);
     };
 
-    var Toast = function (options) {
+    var Toast = function Toast(options) {
         var duration = options.duration || 1500;
 
         var instance = getAnInstance();
@@ -120,86 +126,85 @@ var util = {//工具
 
 //加载动画
 (function () {
-    
+
     var LoadingConstructor = Vue.extend({
         template: '<transition name="fade"><div class="loadWrap" v-show="visible"><div class="loading" ><span class="loading-text"></span></div></div></transition>',
-        data: function () {
+        data: function data() {
             return {
                 visible: false,
                 message: '加载中...'
-            }
+            };
         }
     });
 
     var defaults = {
-        text:null
-    }
+        text: null
+    };
 
-    LoadingConstructor.prototype.close = function() {
+    LoadingConstructor.prototype.close = function () {
         this.visible = false;
         if (this.$el && this.$el.parentNode) {
             this.$el.parentNode.removeChild(this.$el);
-           }
-          this.$destroy();
-      };
+        }
+        this.$destroy();
+    };
 
-    var Loading = function(options){
+    var Loading = function Loading(options) {
         options = defaults;
         var instance = new LoadingConstructor({
             el: document.createElement('div'),
-            data:options
+            data: options
         });
         document.body.appendChild(instance.$el);
-        Vue.nextTick(() => {
+        Vue.nextTick(function () {
             instance.visible = true;
         });
         return instance;
-    }
+    };
     Vue.prototype.$loading = Loading;
 })();
 
+XuntongJSBridge.call('setBounce', { enable: 0 }); //取消ios回弹效果
 
-XuntongJSBridge.call('setBounce', { enable: 0 });//取消ios回弹效果
-
-var appid = util.getQuery().appid, ticket = util.getQuery().ticket;
+var appid = util.getQuery().appid,
+    ticket = util.getQuery().ticket;
 appid && util.setLocalData('demoappId', appid);
-ticket && util.setLocalData('demoticket', ticket)
+ticket && util.setLocalData('demoticket', ticket);
 
-var params = new URLSearchParams();//注意兼容性    
+var params = new URLSearchParams(); //注意兼容性    
 params.append('appid', util.getQuery().appid || util.getQuery().client_id || util.getLocalData('demoappId'));
 params.append('ticket', util.getQuery().ticket || util.getLocalData('demoticket'));
 
 Vue.prototype.$axios = axios.create({
-    baseURL: '/j2eedemo/app/request',
+    baseURL: '/JavaOutDemo/app/request',
+    // baseURL: '/static/mock/data.json',
     timeout: 10000,
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     params: params
-})
+});
 
 var load = null;
 
 Vue.prototype.$axios.interceptors.request.use(function (config) {
-    load =  Vue.prototype.$loading('加载中...');
+    load = Vue.prototype.$loading('加载中...');
     return config;
-  }, function (error) {
-    Vue.prototype.$toast(error)
+}, function (error) {
+    Vue.prototype.$toast(error);
     return Promise.reject(error);
-  });
+});
 
 Vue.prototype.$axios.interceptors.response.use(function (response) {
     // 返回响应时做一些处理
-    load.close()   
+    load.close();
     if (response.status === 200 || response.status === 304) {
         if (response.data.success) {
             return response;
         } else {
-            Vue.prototype.$toast(response.data.error)
+            Vue.prototype.$toast(response.data.error);
         }
     }
 }, function (error) {
     load.close();
-    Vue.prototype.$toast(error)
-    return Promise.reject(error)
+    Vue.prototype.$toast(error);
+    return Promise.reject(error);
 });
-
-
